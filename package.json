@@ -16,5 +16,8 @@
     "url": "https://github.com/deytaaa/rfid-gate-monitoring/issues"
   },
   "homepage": "https://github.com/deytaaa/rfid-gate-monitoring#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "multer": "^2.0.2"
+  }
 }
