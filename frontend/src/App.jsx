@@ -95,7 +95,14 @@ function App() {
   };
 
   if (!isLoggedIn) {
-    return <LoginPage onLogin={handleLogin} />;
+    return (
+      <Router>
+        <Routes>
+          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+          <Route path="*" element={<Navigate to="/login" />} />
+        </Routes>
+      </Router>
+    );
   }
 
   return (
