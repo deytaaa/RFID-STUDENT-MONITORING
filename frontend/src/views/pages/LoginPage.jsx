@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './LoginPage.css';
 
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState('');
@@ -33,9 +34,9 @@ const LoginPage = ({ onLogin }) => {
   };
 
   return (
-    <div className="login-page">
+    <div className="login-bg">
       <form onSubmit={handleSubmit} className="login-form">
-        <h2 className="login-title">Admin Login</h2>
+        <h2 className="login-title" style={{ textAlign: 'center', marginBottom: 24 }}>Admin Login</h2>
         <div className="input-group">
           <input
             type="email"
