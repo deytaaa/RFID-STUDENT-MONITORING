@@ -59,6 +59,7 @@ _An RFID-enabled IoT system that automates main gate access control for students
   - [ ] Test real-time communication between hardware and web app
 
 #### **Hardware Shopping List** (~$80-120)
+
 - RFID-RC522 Reader Module ($5-10)
 - Raspberry Pi 4 with accessories ($40-60)
 - Servo Motor SG90 ($5-10)
@@ -123,19 +124,23 @@ _An RFID-enabled IoT system that automates main gate access control for students
 ## 📅 CAPSTONE TIMELINE (12-16 Weeks Total)
 
 ### **Weeks 1-4: Phase 1 COMPLETE** ✅
+
 - Software development and testing
 
 ### **Weeks 5-8: Phase 2 - Hardware Integration**
+
 - Purchase and setup hardware
 - Basic IoT communication
 - Initial hardware testing
 
 ### **Weeks 9-11: Phase 3 - System Integration**
+
 - Connect all components
 - End-to-end testing
 - Performance validation
 
 ### **Weeks 12-16: Phase 4 - Documentation & Defense**
+
 - Write thesis documentation
 - Prepare presentation materials
 - Conduct final testing
@@ -144,6 +149,7 @@ _An RFID-enabled IoT system that automates main gate access control for students
 ## 🎯 CAPSTONE SUCCESS CRITERIA
 
 ### **Technical Requirements** ✅
+
 - ✅ Functional web application
 - ✅ Student management system
 - ✅ Database integration
@@ -152,6 +158,7 @@ _An RFID-enabled IoT system that automates main gate access control for students
 - [ ] Real-time monitoring
 
 ### **Academic Requirements**
+
 - [ ] Complete thesis documentation (40-60 pages)
 - [ ] Working prototype demonstration
 - [ ] Technical presentation (15-20 minutes)
@@ -159,6 +166,7 @@ _An RFID-enabled IoT system that automates main gate access control for students
 - [ ] Code repository with documentation
 
 ### **Demonstration Requirements**
+
 - [ ] Live system demonstration
 - [ ] Multiple student access scenarios
 - [ ] Real-time dashboard functionality
@@ -168,6 +176,7 @@ _An RFID-enabled IoT system that automates main gate access control for students
 ## 🏆 COMPETITIVE ADVANTAGES
 
 ### **Your System Stands Out Because:**
+
 - ✅ **Full-Stack Solution**: Complete web application + hardware
 - ✅ **Modern Technology**: React, Node.js, IoT integration
 - ✅ **Real-World Application**: Actual school gate monitoring need
@@ -194,6 +203,7 @@ _An RFID-enabled IoT system that automates main gate access control for students
 **You've already completed 70% of your capstone project!** 🎉
 
 The remaining 30% focuses on:
+
 - Hardware integration (25%)
 - Documentation and presentation (5%)
 
