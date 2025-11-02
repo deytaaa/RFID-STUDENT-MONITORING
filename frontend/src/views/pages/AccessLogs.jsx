@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Search, Download, Filter, Calendar } from 'lucide-react'
 import ApiService from '../../services/ApiService.js'
 import WebSocketService from '../../services/WebSocketService'

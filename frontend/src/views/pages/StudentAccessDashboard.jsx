@@ -1,6 +1,7 @@
 import StudentAccessTracker from '../components/StudentAccessTracker'
 import RFIDTestPanel from '../components/RFIDTestPanel'
 import './StudentAccessDashboard.css'
+import React from 'react';
 
 const StudentAccessDashboard = () => {
   return (

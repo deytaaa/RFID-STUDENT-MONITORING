@@ -1,30 +1,29 @@
-import { useState, useEffect } from 'react'
-import Dashboard from './views/pages/Dashboard'
-import AccessLogs from './views/pages/AccessLogs'
-import EnhancedStudentManagement from './views/pages/EnhancedStudentManagement'
-import Settings from './views/pages/Settings'
-import StudentAccessDashboard from './views/pages/StudentAccessDashboard'
-import RealTimeRFID from './views/components/RealTimeRFID'
-import Sidebar from './views/components/Sidebar'
-import Header from './views/components/Header'
-import DashboardPresenter from './presenters/DashboardPresenter'
-import LoginPage from './views/pages/LoginPage'
-import UserManagement from './views/pages/UserManagement'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import Dashboard from './views/pages/Dashboard';
+import AccessLogs from './views/pages/AccessLogs';
+import EnhancedStudentManagement from './views/pages/EnhancedStudentManagement';
+import Settings from './views/pages/Settings';
+import StudentAccessDashboard from './views/pages/StudentAccessDashboard';
+import RealTimeRFID from './views/components/RealTimeRFID';
+import Sidebar from './views/components/Sidebar';
+import Header from './views/components/Header';
+import DashboardPresenter from './presenters/DashboardPresenter';
+import LoginPage from './views/pages/LoginPage';
+import UserManagement from './views/pages/UserManagement';
+import './App.css';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('dashboard')
-  const [gateStatus, setGateStatus] = useState('closed')
-  const [systemStatus] = useState('online')
-  const [dashboardPresenter, setDashboardPresenter] = useState(null)
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'))
-  const [user, setUser] = useState(null)
+  const [gateStatus, setGateStatus] = useState('closed');
+  const [systemStatus] = useState('online');
+  const [dashboardPresenter, setDashboardPresenter] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       setIsLoggedIn(true);
-      // Fetch user info from backend
       fetch('http://localhost:3000/api/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -46,33 +45,31 @@ function App() {
   useEffect(() => {
     if (!isLoggedIn) {
       if (dashboardPresenter) {
-        dashboardPresenter.destroy()
-        setDashboardPresenter(null)
+        dashboardPresenter.destroy();
+        setDashboardPresenter(null);
       }
       return;
     }
-    // Only initialize DashboardPresenter after login
     if (!dashboardPresenter) {
-      const presenter = new DashboardPresenter()
-      setDashboardPresenter(presenter)
+      const presenter = new DashboardPresenter();
+      setDashboardPresenter(presenter);
       presenter.setView({
         updateView: (data) => {
           if (data.type === 'GATE_STATUS_CHANGED') {
-            setGateStatus(data.status)
+            setGateStatus(data.status);
           }
         }
-      })
-      presenter.startRealTimeUpdates()
+      });
+      presenter.startRealTimeUpdates();
     }
     return () => {
-      if (dashboardPresenter) dashboardPresenter.destroy()
-    }
-  }, [dashboardPresenter, isLoggedIn])
+      if (dashboardPresenter) dashboardPresenter.destroy();
+    };
+  }, [dashboardPresenter, isLoggedIn]);
 
   const handleLogin = (loginData) => {
     setIsLoggedIn(true);
     localStorage.setItem('token', loginData.token);
-    // Always fetch full user info after login
     fetch('http://localhost:3000/api/auth/me', {
       headers: { 'Authorization': `Bearer ${loginData.token}` }
     })
@@ -85,65 +82,51 @@ function App() {
         }
       })
       .catch(() => setUser(null));
-  }
+  };
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    setIsLoggedIn(false)
-    setUser(null)
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setUser(null);
     if (dashboardPresenter) {
-      dashboardPresenter.destroy()
-      setDashboardPresenter(null)
+      dashboardPresenter.destroy();
+      setDashboardPresenter(null);
     }
-  }
+  };
 
-  // Only render protected pages if logged in
   if (!isLoggedIn) {
-    // Prevent any protected API calls before login
-    return <LoginPage onLogin={handleLogin} />
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   return (
-    <div className="app">
-      <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} user={user} />
-      <div className="main-content">
-        <Header 
-          gateStatus={gateStatus} 
-          systemStatus={systemStatus}
-          currentPage={currentPage}
-          user={user}
-          onLogout={handleLogout}
-        />
-        <div className="page-content">
-          {/* Only render dashboard and other pages if logged in */}
-          {isLoggedIn && currentPage === 'dashboard' && dashboardPresenter && <Dashboard gateStatus={gateStatus} presenter={dashboardPresenter} />}
-          {isLoggedIn && currentPage === 'student-access' && <StudentAccessDashboard />}
-          {isLoggedIn && currentPage === 'access-logs' && <AccessLogs />}
-          {isLoggedIn && currentPage === 'student-management' && (
-            (user && (user.role === 'superadmin' || user.accessLevel === 'superadmin'))
-              ? <EnhancedStudentManagement user={user} />
-              : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage students.</div>
-          )}
-          {isLoggedIn && currentPage === 'realtime-rfid' && <RealTimeRFID />}
-          {isLoggedIn && currentPage === 'settings' && <Settings />}
-
-          {/* Device Management Page (example: currentPage === 'device-management') */}
-          {isLoggedIn && currentPage === 'device-management' && (
-            (user && (user.role === 'superadmin' || user.accessLevel === 'superadmin'))
-              ? <DeviceManagement />
-              : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage devices.</div>
-          )}
-
-          {/* User Management Page (example: currentPage === 'user-management') */}
-          {isLoggedIn && currentPage === 'user-management' && (
-            (user && (user.role === 'superadmin' || user.accessLevel === 'superadmin'))
-              ? <UserManagement user={user} />
-              : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage users.</div>
-          )}
+    <Router>
+      <div className="app">
+        <Sidebar user={user} />
+        <div className="main-content">
+          <Header 
+            gateStatus={gateStatus} 
+            systemStatus={systemStatus}
+            user={user}
+            onLogout={handleLogout}
+          />
+          <div className="page-content">
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" />} />
+              <Route path="/dashboard" element={dashboardPresenter ? <Dashboard gateStatus={gateStatus} presenter={dashboardPresenter} /> : null} />
+              <Route path="/student-access" element={<StudentAccessDashboard />} />
+              <Route path="/access-logs" element={<AccessLogs />} />
+              <Route path="/student-management" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <EnhancedStudentManagement user={user} /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage students.</div>} />
+              <Route path="/realtime-rfid" element={<RealTimeRFID />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/user-management" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <UserManagement user={user} /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage users.</div>} />
+              {/* Add more routes as needed */}
+              <Route path="*" element={<Navigate to="/dashboard" />} />
+            </Routes>
+          </div>
         </div>
       </div>
-    </div>
-  )
+    </Router>
+  );
 }
 
-export default App
+export default App;

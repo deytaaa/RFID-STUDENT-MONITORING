@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { 
   Plus, 
   Edit, 
@@ -330,6 +330,8 @@ const EnhancedStudentManagement = ({ user }) => {
     }
   }
   
+  // Removed obsolete useEffect for manual tab URL update
+
   // Wait for user context before permission checks
   if (typeof user === 'undefined' || user === null) {
     return (

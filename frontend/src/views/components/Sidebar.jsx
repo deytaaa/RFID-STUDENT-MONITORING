@@ -11,8 +11,10 @@ import {
 import './Sidebar.css'
 import logo from '../../assets/logo-ptc.png';
 import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
-const Sidebar = ({ currentPage, setCurrentPage, user }) => {
+const Sidebar = ({ user }) => {
+  const location = useLocation();
   const [backendOnline, setBackendOnline] = useState(true);
 
   useEffect(() => {
@@ -73,23 +75,22 @@ const Sidebar = ({ currentPage, setCurrentPage, user }) => {
           <span className="logo-text">Student Monitoring</span>
         </div>
       </div>
-      
       <nav className="sidebar-nav">
         {menuItems.map((item) => {
-          const Icon = item.icon
+          const Icon = item.icon;
           return (
-            <button
+            <Link
               key={item.id}
-              className={`nav-item ${currentPage === item.id ? 'active' : ''}`}
-              onClick={() => setCurrentPage(item.id)}
+              to={`/${item.id}`}
+              className={`nav-item${location.pathname === `/${item.id}` ? ' active' : ''}`}
+              style={{ textDecoration: 'none' }}
             >
               <Icon size={20} />
               <span>{item.label}</span>
-            </button>
-          )
+            </Link>
+          );
         })}
       </nav>
-      
       <div className="sidebar-footer">
         <div className={`system-status ${backendOnline ? 'online' : 'offline'}`}>
           <Activity size={16} />

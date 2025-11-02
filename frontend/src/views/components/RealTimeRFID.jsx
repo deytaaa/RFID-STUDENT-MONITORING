@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import WebSocketService from '../../services/WebSocketService'
 import { BsCpu, BsCheckCircle, BsSearch, BsBullseye, BsClipboardData, BsFileEarmarkText, BsRobot, BsXCircle } from "react-icons/bs";
 import { Tooltip } from 'react-tooltip';

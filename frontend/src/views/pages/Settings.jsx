@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Save, Wifi, Shield, Bell, Database, Clock, CheckCircle } from 'lucide-react'  
 import './Settings.css'
 
@@ -72,6 +72,7 @@ const Settings = () => {
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {
+      console.log('Error saving settings:', err)
       setSaveSuccess(false)
       alert('Failed to save settings.');
     }
