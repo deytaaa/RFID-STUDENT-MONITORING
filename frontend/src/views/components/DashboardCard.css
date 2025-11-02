@@ -1,0 +1,98 @@
+.dashboard-card {
+  background: rgb(255, 255, 255);
+  border-radius: 8px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s ease;
+  height: 80px;
+  
+}
+
+.dashboard-card:hover {
+  border-color:#25eb50; /* light greebn blue on hover */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-label {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 2px 0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.1;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .dashboard-card {
+    padding: 16px;
+  }
+  
+  .card-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .card-value {
+    font-size: 20px;
+  }
+}
+
+/* Dashboard specific styles for horizontal card layout */
+.dashboard-stats-grid .dashboard-card {
+  min-width: 0; /* Ensure cards can shrink */
+  width: 100%; /* Take full width of grid cell */
+}
+
+.dashboard-stats-grid .card-label {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-stats-grid .card-value {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-stats-grid .dashboard-card {
+    height: auto;
+    min-height: 70px;
+  }
+  
+  .dashboard-stats-grid .card-value {
+    font-size: 18px;
+  }
+}

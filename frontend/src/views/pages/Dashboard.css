@@ -1,0 +1,301 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 32px 0;
+  background: #f8fafc;
+}
+
+.gate-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 55px;
+  margin: 0 65px;
+}
+
+.gate-controls .btn {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 12px 16px;
+}
+
+.system-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 24px 24px 24px;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #f1f5f9;
+  margin: 0;
+}
+
+.metric:first-child {
+  padding-top: 8px;
+}
+
+.metric:last-child {
+  border-bottom: none;
+}
+
+.metric-label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.metric-value.online {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.metric-value.offline {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.metric-value.warning {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+/* Modern Dashboard Enhancements */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 32px 0;
+  background: #f8fafc;
+}
+
+.dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 32px;
+  margin-bottom: 24px;
+  border-radius: 1.5rem;
+  background: #f8fafc;
+}
+
+.card {
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 4px 24px rgba(60,72,88,0.08);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 3px solid #25eb50; /* Enhanced geenb border for card visibility */
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.card:hover {
+  box-shadow: 0 8px 32px rgba(60,72,88,0.15);
+  border-color:#25eb50; /* light greebn on hover */
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.status-open { background: #dcfce7; color: #16a34a; }
+.status-closed { background: #fee2e2; color: #ef4444; }
+.status-locked { background: #fef9c3; color: #f59e0b; }
+.status-online { background: #e0e7ff; color: #2563eb; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 10px 18px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-primary {
+  background: #16a34a;
+  color: #fff;
+}
+.btn-primary:hover {
+  background: #15803d;
+}
+.btn-secondary {
+  background: #e0e7ff;
+  color: #2563eb;
+}
+.btn-secondary:hover {
+  background: #c7d2fe;
+}
+.btn-danger {
+  background: #fee2e2;
+  color: #ef4444;
+}
+.btn-danger:hover {
+  background: #fecaca;
+}
+
+.loading-spinner {
+  border: 4px solid #e5e7eb;
+  border-top: 4px solid #16a34a;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 15px;
+}
+.alert-warning {
+  background: #fef9c3;
+  color: #f59e0b;
+  border: 1px solid #fde68a;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px 0;
+  color: #64748b;
+}
+.empty-state-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+.empty-state-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.empty-state-description {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .gate-controls {
+    flex-direction: column;
+  }
+  
+  .gate-controls .btn {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .grid.grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+/* Typography */
+.card-title, .card-title-modern {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+}
+.card-subtitle-modern {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* Chart enhancements (if using chart.js or similar) */
+.chartjs-render-monitor {
+  transition: all 0.3s;
+}
+
+/* Access Analytics Card */
+.access-analytics-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 6px 32px rgba(60,72,88,0.12);
+  border-radius: 1.5rem;
+  border: 2px solid #e5e7eb;
+  background: #fff;
+}
+
+/* Modern Card Design */
+.card.modern-card {
+  box-shadow: 0 4px 24px rgba(60,72,88,0.08);
+  border-radius: 1.5rem;
+  border: 2px solid #e5e7eb;
+  background: #fff;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.card.modern-card:hover {
+  box-shadow: 0 8px 32px rgba(60,72,88,0.15);
+  border-color: #16a34a;
+}
+
+.card-header-modern {
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 18px;
+  text-align: center;
+}
+.card-title-modern {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+.card-subtitle-modern {
+  font-size: 15px;
+  color: #6b7280;
+}
+
+.dashboard-main-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  justify-content: center;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.dashboard-main-cards > .card.modern-card {
+  min-height: 370px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Add more as needed for your components */

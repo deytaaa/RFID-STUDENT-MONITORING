@@ -1,0 +1,482 @@
+/* Real-Time RFID Monitor Styles */
+.realtime-rfid {
+  padding: 20px;
+  background: #f8fafc;
+  min-height: 140vh;
+}
+
+/* Header */
+.rfid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-indicator h2 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239,68,68,0.15);
+  border: 2px solid #fff;
+  transition: all 0.3s ease;
+}
+
+.status-dot.online {
+  background: #22c55e;
+  box-shadow: 0 0 0 6px rgba(34,197,94,0.25);
+  border: 2px solid #16a34a;
+  animation: pulse 2s infinite;
+}
+
+.status-dot.offline {
+  background: #ef4444;
+  box-shadow: 0 0 0 6px rgba(239,68,68,0.25);
+  border: 2px solid #b91c1c;
+}
+
+.connection-status .connected {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.connection-status .disconnected {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* Grid Layout */
+.rfid-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 20px;
+  height: calc(100vh - 140px);
+}
+
+/* Status Cards */
+.status-cards {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.status-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+  border: 2px solid #a5b4fc; /* Thinner, softer border */
+}
+
+.status-card.system {
+  border-color: #c4b5fd;
+}
+
+.status-card.scan {
+  border-color: #67e8f9;
+}
+
+.status-card.access {
+  border-color: #fde68a;
+}
+
+.status-card h3 {
+  margin: 0 0 15px 0;
+  color: #374151;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.status-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.status-content {
+  gap: 16px;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+}
+
+.status-badge.ready {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.not-ready {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.card-id {
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #1e293b;
+  letter-spacing: 1px;
+}
+
+.timestamp {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.no-data {
+  color: #9ca3af;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Activity Section */
+.activity-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.activity-section h3 {
+  margin: 0 0 20px 0;
+  color: #374151;
+  font-size: 18px;
+  font-weight: 600;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 10px;
+}
+
+.activity-list {
+  max-height: 350px;
+  min-height: 250px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-right: 8px;
+}
+
+.activity-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 10px;
+  border-left: 4px solid #e5e7eb;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s;
+}
+
+.activity-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.activity-item.granted {
+  background: #f0fdf4;
+  border-left-color: #22c55e;
+}
+
+.activity-item.denied {
+  background: #fef2f2;
+  border-left-color: #ef4444;
+}
+
+.activity-item.highlight {
+  box-shadow: 0 4px 16px rgba(59,130,246,0.12);
+  border-left-width: 6px;
+  border-left-color: #3b82f6;
+  background: #f1f5f9;
+}
+
+.activity-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 14px;
+  width: 100%;
+}
+
+.activity-main .card-id {
+  font-size: 16px;
+}
+
+.activity-main {
+  gap: 12px;
+}
+
+.status.granted {
+  color: #22c55e;
+  font-size: 18px;
+}
+
+.status.denied {
+  color: #ef4444;
+  font-size: 18px;
+}
+
+.activity-details {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 18px;
+}
+
+.message {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.time {
+  font-size: 12px;
+  color: #9ca3af;
+  font-family: 'Courier New', monospace;
+}
+
+.no-activity {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.no-activity p {
+  margin: 5px 0;
+}
+
+/* Logs Section */
+.logs-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.logs-section h3 {
+  margin: 0 0 20px 0;
+  color: #374151;
+  font-size: 18px;
+  font-weight: 600;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 10px;
+}
+
+.logs-list {
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.log-item {
+  display: flex;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.log-item:hover {
+  background: #f8fafc;
+}
+
+.log-item.success {
+  background: #f0fdf4;
+  border-left: 3px solid #22c55e;
+}
+
+.log-item.error {
+  background: #fef2f2;
+  border-left: 3px solid #ef4444;
+}
+
+.log-item.info {
+  background: #eff6ff;
+  border-left: 3px solid #3b82f6;
+}
+
+.log-time {
+  color: #6b7280;
+  font-weight: 600;
+  min-width: 80px;
+}
+
+.log-message {
+  color: #374151;
+  flex: 1;
+}
+
+/* Profile Picture */
+.profile-picture {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #10b981;
+  box-shadow: 0 4px 16px rgba(16,185,129,0.15);
+  margin-right: 16px;
+  transition: box-shadow 0.2s;
+}
+
+.profile-picture-small {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #10b981;
+  box-shadow: 0 2px 8px rgba(16,185,129,0.10);
+  margin-right: 10px;
+}
+
+/* Student Name */
+.student-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+/* Access Result */
+.access-result {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 8px;
+  padding: 6px 14px;
+  border-radius: 16px;
+  display: inline-block;
+}
+
+.access-result.granted {
+  background: #dcfce7;
+  color: #166534;
+ 
+}
+
+.access-result.denied {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Student Scan Info */
+.student-scan-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-scan-info .student-name,
+.status-card .student-name {
+  text-align: center;
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .rfid-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  
+  .status-cards {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .realtime-rfid {
+    padding: 15px;
+  }
+  
+  .rfid-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .status-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .profile-picture {
+    width: 90px;
+    height: 80px;
+    margin-right: 8px;
+  }
+  .profile-picture-small {
+    width: 32px;
+    height: 32px;
+    margin-right: 6px;
+  }
+  .status-card h3,
+  .activity-section h3,
+  .logs-section h3 {
+    font-size: 1.1rem;
+  }
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.status-dot.online {
+  animation: pulse 2s infinite;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.activity-item,
+.log-item {
+  animation: slideIn 0.3s ease;
+}
