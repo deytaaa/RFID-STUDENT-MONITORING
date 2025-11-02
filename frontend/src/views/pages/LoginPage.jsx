@@ -34,32 +34,42 @@ const LoginPage = ({ onLogin }) => {
   };
 
   return (
-    <div className="login-bg">
-      <form onSubmit={handleSubmit} className="login-form">
-        <h2 className="login-title" style={{ textAlign: 'center', marginBottom: 24 }}>Admin Login</h2>
-        <div className="input-group">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            className="login-input"
-          />
-        </div>
-        <div className="input-group">
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            className="login-input"
-          />
-        </div>
-        <button type="submit" disabled={loading} className="login-btn">{loading ? 'Logging in...' : 'Login'}</button>
-        {error && <div className="error-message">{error}</div>}
-      </form>
+    <div className="login-container">
+      <div className="login-left">
+        <img src='/public/logo-ptc.png' alt="PTC Logo" className="login-logo" />
+        <h1 className="login-title">QUACKCESS</h1>
+        <p className="login-subtitle">Student Monitoring</p>
+      </div>
+      <div className="login-right">
+        <h2 className="login-welcome">Welcome back,<br />Admin!</h2>
+        <p className="login-note">*Only authorized personnel</p>
+        <form onSubmit={handleSubmit} className="login-form">
+          <div className="input-group">
+            <span className="input-label">Email</span>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              className="login-input"
+            />
+          </div>
+          <div className="input-group">
+            <span className="input-label">Password</span>
+            <input
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              className="login-input"
+            />
+          </div>
+          <button type="submit" disabled={loading} className="login-btn">{loading ? 'Logging in...' : 'LOG IN'}</button>
+          {error && <div className="error-message">{error}</div>}
+        </form>
+      </div>
     </div>
   );
 };
