@@ -22,8 +22,8 @@ const AccessChart = ({ data = [] }) => {
   const chartData = data.length > 0 ? data : defaultData
 
   return (
-    <div style={{ width: '100%', height: 280, padding: '20px 10px' }}>
-      <ResponsiveContainer>
+    <div style={{ width: 600, height: 400, padding: '20px 10px' }}>
+      <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
           <CartesianGrid strokeDasharray="none" stroke="transparent" />
           <XAxis 

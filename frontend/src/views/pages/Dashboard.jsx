@@ -349,7 +349,7 @@ const Dashboard = () => {
           </div>
         </div>
         {/* Access Analytics - Centered */}
-        <div className="card modern-card access-analytics-centered" style={{ flex: '1 1 500px', minWidth: '340px', maxWidth: '600px', margin: '0 auto' }}>
+        <div className="card modern-card access-analytics-centered" style={{ width: 600, height: 440, margin: '0 auto' }}>
           <div className="card-header-modern" style={{ textAlign: 'center' }}>
             <h3 className="card-title-modern">Access Analytics</h3>
             <p className="card-subtitle-modern">Last 7 days</p>
