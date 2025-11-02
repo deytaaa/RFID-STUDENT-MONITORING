@@ -119,6 +119,7 @@ class ArduinoSerialService {
         case 'CARD_SCANNED': this.handleCardScanned(data); break;
         case 'ACCESS_GRANTED': this.handleAccessGranted(data); break;
         case 'ACCESS_DENIED': this.handleAccessDenied(data); break;
+        case 'GATE_OPEN': this.handleGateOpen(data); break;
         case 'GATE_CLOSED': this.handleGateClosed(data); break;
         default: console.log(`❓ Unknown event: ${data.event}`);
       }
@@ -207,6 +208,15 @@ class ArduinoSerialService {
     this.io.emit('gate_status', {
       status: 'closed',
       message: 'Gate closed, ready for next card',
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  handleGateOpen(data) {
+    console.log('🚪 Gate opened event received:', data);
+    this.io.emit('gate_status', {
+      status: 'open',
+      message: 'Gate opened by backend or RFID',
       timestamp: new Date().toISOString()
     });
   }
