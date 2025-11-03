@@ -353,8 +353,10 @@ const RealTimeRFID = () => {
   // Fetch recent activity with token check
 
   const fetchStudentByCardID = async (cardID) => {
+    // Only use the part before the colon
+    const pureCardID = cardID.split(':')[0];
     try {
-      const res = await fetch(`http://localhost:3000/api/students/rfid/${cardID}`);
+      const res = await fetch(`http://localhost:3000/api/students/rfid/${pureCardID}`);
       if (res.ok) {
         const result = await res.json();
         return result.data;
