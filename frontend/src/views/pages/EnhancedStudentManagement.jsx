@@ -359,10 +359,7 @@ const EnhancedStudentManagement = ({ user }) => {
     <div className="enhanced-student-management">
       {/* Header */}
       <div className="page-header">
-        <div className="header-content">
-          <h1>Main Gate Student Access Management</h1>
-          <p>RFID-enabled main entrance monitoring and student access control</p>
-        </div>
+        
         <div className="header-actions">
           <button 
             className="btn btn-secondary"

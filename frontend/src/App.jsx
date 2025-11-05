@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Dashboard from './views/pages/Dashboard';
 import AccessLogs from './views/pages/AccessLogs';
@@ -105,34 +105,61 @@ function App() {
     );
   }
 
+  // Move useLocation inside Router context
   return (
     <Router>
-      <div className="app">
-        <Sidebar user={user} />
-        <div className="main-content">
-          <Header 
-            gateStatus={gateStatus} 
-            systemStatus={systemStatus}
-            user={user}
-            onLogout={handleLogout}
-          />
-          <div className="page-content">
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" />} />
-              <Route path="/dashboard" element={dashboardPresenter ? <Dashboard gateStatus={gateStatus} presenter={dashboardPresenter} /> : null} />
-              <Route path="/student-access" element={<StudentAccessDashboard />} />
-              <Route path="/access-logs" element={<AccessLogs />} />
-              <Route path="/student-management" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <EnhancedStudentManagement user={user} /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage students.</div>} />
-              <Route path="/realtime-rfid" element={<RealTimeRFID />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/user-management" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <UserManagement user={user} /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage users.</div>} />
-              {/* Add more routes as needed */}
-              <Route path="*" element={<Navigate to="/dashboard" />} />
-            </Routes>
-          </div>
+      <AppWithLocation
+        gateStatus={gateStatus}
+        systemStatus={systemStatus}
+        user={user}
+        onLogout={handleLogout}
+        dashboardPresenter={dashboardPresenter}
+      />
+    </Router>
+  );
+}
+
+function AppWithLocation({ gateStatus, systemStatus, user, onLogout, dashboardPresenter }) {
+  const location = useLocation();
+
+  const getCurrentPage = (pathname) => {
+    if (pathname === '/dashboard') return 'dashboard';
+    if (pathname === '/access-logs') return 'access-logs';
+    if (pathname === '/student-management') return 'student-management';
+    if (pathname === '/settings') return 'settings';
+    if (pathname === '/student-access') return 'student-access';
+    if (pathname === '/realtime-rfid') return 'realtime-rfid';
+    if (pathname === '/user-management') return 'user-management';
+    return 'dashboard';
+  };
+
+  return (
+    <div className="app">
+      <Sidebar user={user} />
+      <div className="main-content">
+        <Header
+          gateStatus={gateStatus}
+          systemStatus={systemStatus}
+          currentPage={getCurrentPage(location.pathname)}
+          user={user}
+          onLogout={onLogout}
+        />
+        <div className="page-content">
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" />} />
+            <Route path="/dashboard" element={dashboardPresenter ? <Dashboard gateStatus={gateStatus} presenter={dashboardPresenter} /> : null} />
+            <Route path="/student-access" element={<StudentAccessDashboard />} />
+            <Route path="/access-logs" element={<AccessLogs />} />
+            <Route path="/student-management" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <EnhancedStudentManagement user={user} /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage students.</div>} />
+            <Route path="/realtime-rfid" element={<RealTimeRFID />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/user-management" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <UserManagement user={user} /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage users.</div>} />
+            {/* Add more routes as needed */}
+            <Route path="*" element={<Navigate to="/dashboard" />} />
+          </Routes>
         </div>
       </div>
-    </Router>
+    </div>
   );
 }
 

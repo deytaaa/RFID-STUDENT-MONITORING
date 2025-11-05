@@ -3,6 +3,8 @@ import WebSocketService from '../../services/WebSocketService'
 import { BsCpu, BsCheckCircle, BsSearch, BsBullseye, BsClipboardData, BsFileEarmarkText, BsRobot, BsXCircle } from "react-icons/bs";
 import { Tooltip } from 'react-tooltip';
 import './RealTimeRFID.css'
+import RecentActivity from './RecentActivity';
+import { useLocation } from 'react-router-dom';
 
 const RealTimeRFID = () => {
   const [rfidStatus, setRfidStatus] = useState({
@@ -21,6 +23,7 @@ const RealTimeRFID = () => {
   
   // Track last event times to prevent rapid duplicates
   const lastEventTimes = useRef(new Map())
+  const location = useLocation();
 
   useEffect(() => {
     // Load persisted state from localStorage on mount
@@ -167,6 +170,7 @@ const RealTimeRFID = () => {
       setSystemLogs(prev => [log, ...prev.slice(0, 19)])
 
       setAccessStudent(student);
+      await fetchRecentActivity();
     }
 
     const handleAccessDenied = async (data) => {
@@ -216,6 +220,7 @@ const RealTimeRFID = () => {
       setSystemLogs(prev => [log, ...prev.slice(0, 19)])
 
       setAccessStudent(student);
+      await fetchRecentActivity();
     }
 
     const handleGateClosed = (data) => {
@@ -291,35 +296,46 @@ const RealTimeRFID = () => {
     }
   }, [])
 
-  useEffect(() => {
-    // Fetch latest recent activity from backend when component mounts
-    const fetchRecentActivity = async () => {
-      try {
-        const res = await fetch('http://localhost:3000/api/access-logs?limit=10');
-        if (res.ok) {
-          const result = await res.json();
-          if (result.success && Array.isArray(result.data)) {
-            // Fetch student info for each activity
-            const activities = await Promise.all(result.data.map(async log => {
-              const student = log.cardID ? await fetchStudentByCardID(log.cardID) : null;
-              return {
-                id: log._id || `${Date.now()}-${Math.random()}`,
-                cardID: log.cardID,
-                status: log.accessGranted ? 'granted' : 'denied',
-                timestamp: log.timestamp,
-                message: log.accessGranted ? 'Access Granted' : 'Access Denied',
-                student: student
-              };
-            }));
-            setRecentActivity(activities);
-          }
+  // Move fetchRecentActivity outside useEffect so it can be called from anywhere
+  const fetchRecentActivity = React.useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:3000/api/access-logs?limit=10');
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+          // Fetch student info for each activity
+          const activities = await Promise.all(result.data.map(async log => {
+            const student = log.cardID ? await fetchStudentByCardID(log.cardID) : null;
+            return {
+              id: log._id || `${Date.now()}-${Math.random()}`,
+              cardID: log.cardID,
+              status: log.accessGranted ? 'granted' : 'denied',
+              timestamp: log.timestamp,
+              message: log.accessGranted ? 'Access Granted' : 'Access Denied',
+              student: student
+            };
+          }));
+          setRecentActivity(activities);
+        } else {
+          setRecentActivity([]);
         }
-      } catch {
-        // Error intentionally ignored
       }
-    };
-    fetchRecentActivity();
+    } catch {
+      // Error intentionally ignored
+    }
   }, []);
+
+  useEffect(() => {
+    // Always fetch from backend on mount
+    fetchRecentActivity();
+  }, [fetchRecentActivity]);
+
+  useEffect(() => {
+    // Always fetch from backend when route changes (e.g., tab switch)
+    fetchRecentActivity();
+  }, [location.pathname, fetchRecentActivity]);
+
+  // Remove localStorage.setItem for recentActivity
 
   // Fetch system status on mount and every 10 seconds
   useEffect(() => {
@@ -363,17 +379,21 @@ const RealTimeRFID = () => {
       } else if (res.status === 404) {
         // Card not found, return a placeholder object
         return {
-          name: 'Unknown Card',
+          name: 'Card not registered',
           profilePicture: '',
           cardID,
           status: 'unauthorized'
         };
       }
     } catch (err) {
-      console.log(err)
-
-      // Network or other error, return null
-      return null;
+      console.log('Error fetching student by card ID:', err);
+      // Network or other error, return a placeholder object
+      return {
+        name: 'Unable to fetch card info',
+        profilePicture: '',
+        cardID,
+        status: 'error'
+      };
     }
     return null;
   }
@@ -410,6 +430,18 @@ const RealTimeRFID = () => {
   if (msg.includes('🎯')) return <span style={style}><BsBullseye style={{marginRight:6}} /> {msg.replace('🎯','')}</span>;
   return <span style={style}>{msg}</span>;
 };
+
+  // Helper to transform recentActivity data for RecentActivity component
+  const recentActivityData = recentActivity.map(item => ({
+    id: item.id,
+    user: item.student?.name || 'Unknown',
+    rfid: item.cardID || '',
+    status: item.status || 'unknown',
+    profilePicture: item.student?.profilePicture || '',
+    // You can add more fields if needed, e.g. email, department, etc.
+    // email: item.student?.email,
+    // department: item.student?.department
+  }));
 
   return (
     <div className="realtime-rfid">
@@ -469,7 +501,9 @@ const RealTimeRFID = () => {
                       className="profile-picture"
                       style={{ background: scannedStudent && (scannedStudent.name === 'Unknown Card' || scannedStudent.name === 'Unauthorized User') ? '#f3f4f6' : undefined }}
                     />
-                    <span className="student-name" style={{fontSize: '1.2rem', fontWeight: 600}}>{scannedStudent.name}</span>
+                    <span className="student-name" style={{fontSize: '1.2rem', fontWeight: 600}}>
+                      {scannedStudent.name === 'Unknown Card' ? 'Card not registered' : scannedStudent.name === 'Unauthorized User' ? 'Unauthorized card tapped' : scannedStudent.name}
+                    </span>
                   </div>
                 ) : (
                   <div className="card-id">{rfidStatus.lastCardScanned.cardID}</div>
@@ -533,49 +567,7 @@ const RealTimeRFID = () => {
         {/* Recent Activity */}
         <div className="activity-section">
           <h3><BsClipboardData size={24} style={{marginRight: 12}} /> Recent Activity</h3>
-          <div className="activity-list">
-            {recentActivity.length > 0 ? (
-              recentActivity.map((activity, idx) => (
-                <div key={activity.id} className={`activity-item ${activity.status} ${idx === 0 ? 'highlight' : ''}`}
-                  title={activity.status === 'granted' ? 'Access Granted' : 'Access Denied'}>
-                  <div className="activity-main">
-                    {activity.student ? (
-                      <>
-                        <img
-                          src={activity.student.name === 'Unauthorized User' || activity.student.name === 'Unknown Card'
-                            ? 'https://cdn-icons-png.flaticon.com/512/149/149071.png'
-                            : activity.student.profilePicture
-                              ? (activity.student.profilePicture.startsWith('/uploads/profile-pictures/')
-                                  ? `http://localhost:3000${activity.student.profilePicture}`
-                                  : activity.student.profilePicture.startsWith('http')
-                                    ? activity.student.profilePicture
-                                    : activity.student.profilePicture)
-                              : 'https://cdn-icons-png.flaticon.com/512/1946/1946429.png' // default avatar for authorized users with no profile
-                          }
-                          alt="Profile"
-                          className="profile-picture-small"
-                          style={{ background: activity.student.name === 'Unauthorized User' || activity.student.name === 'Unknown Card' ? '#f3f4f6' : undefined }}
-                        />
-                        <span className="student-name">{activity.student.name}</span>
-                      </>
-                    ) : (
-                      <span className="card-id">{activity.cardID}</span>
-                    )}
-                    <span className={`status ${activity.status}`}>{activity.status === 'granted' ? <BsCheckCircle /> : <BsXCircle />}</span>
-                  </div>
-                  <div className="activity-details">
-                    <div className="message">{activity.message}</div>
-                    <div className="time">{formatTime(activity.timestamp)}</div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="no-activity">
-                <p><BsSearch size={24} style={{marginRight: 12}} /> Waiting for RFID card scans...</p>
-                <p>Scan a card to see real-time updates!</p>
-              </div>
-            )}
-          </div>
+          <RecentActivity data={recentActivityData} />
         </div>
 
         {/* System Logs */}
@@ -597,3 +589,6 @@ const RealTimeRFID = () => {
 }
 
 export default RealTimeRFID
+
+// Example usage for public assets:
+// <img src="/logo-ptc.png" alt="Logo" />

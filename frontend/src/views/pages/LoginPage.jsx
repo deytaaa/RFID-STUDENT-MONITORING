@@ -36,7 +36,7 @@ const LoginPage = ({ onLogin }) => {
   return (
     <div className="login-container">
       <div className="login-left">
-        <img src='/public/logo-ptc.png' alt="PTC Logo" className="login-logo" />
+        <img src='/logo-ptc.png' alt="PTC Logo" className="login-logo" />
         <h1 className="login-title">QUACKCESS</h1>
         <p className="login-subtitle">Student Monitoring</p>
       </div>

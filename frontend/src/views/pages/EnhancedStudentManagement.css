@@ -265,7 +265,8 @@
 
 /* Table Cell Styles */
 .student-name .name {
-  font-weight: 500;
+  font-size: 15px !important;
+  font-weight: 200;
   color: #1f2937;
 }
 

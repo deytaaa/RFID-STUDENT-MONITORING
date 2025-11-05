@@ -6,6 +6,8 @@ const Header = ({ gateStatus, systemStatus, currentPage, user, onLogout }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const userBtnRef = useRef(null);
   const [backendOnline, setBackendOnline] = useState(true);
+  const [currentDate, setCurrentDate] = useState('');
+  const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -34,6 +36,26 @@ const Header = ({ gateStatus, systemStatus, currentPage, user, onLogout }) => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      setCurrentDate(now.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }));
+      setCurrentTime(now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true // Use AM/PM format
+      }));
+    };
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 1000); // update every second
+    return () => clearInterval(interval);
+  }, []);
+
   const getPageTitle = (page) => {
     const titles = {
       'dashboard': 'School Dashboard',
@@ -43,7 +65,7 @@ const Header = ({ gateStatus, systemStatus, currentPage, user, onLogout }) => {
       'settings': 'System Settings',
       'device-management': 'Device Management',
       'student-access': 'Student Access Dashboard',
-      'realtime-rfid': 'Real-Time RFID'
+      'realtime-rfid': 'Real Time Monitoring' // Update title for realtime monitoring
     }
     return titles[page] || 'School Dashboard'
   }
@@ -63,6 +85,14 @@ const Header = ({ gateStatus, systemStatus, currentPage, user, onLogout }) => {
     <header className="header">
       <div className="header-left">
         <h1 className="page-title">{getPageTitle(currentPage)}</h1>
+      </div>
+      <div className="header-center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+        <span className="header-date" style={{ fontWeight: 500 }}>
+          {currentDate}
+        </span>
+        <span className="header-time" style={{ fontWeight: 500 }}>
+          {currentTime}
+        </span>
       </div>
       
       <div className="header-right">

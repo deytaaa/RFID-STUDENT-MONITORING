@@ -91,8 +91,6 @@ const Settings = () => {
     <div className="settings">
       <div className="settings-header">
         <div className="settings-title">
-          <h2>System Settings</h2>
-          <p className="settings-subtitle">Configure your RFID gate system</p>
         </div>
         <div className="settings-actions">
           {saveSuccess && (

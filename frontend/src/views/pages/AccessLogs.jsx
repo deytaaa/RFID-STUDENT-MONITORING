@@ -189,8 +189,6 @@ const AccessLogs = () => {
       <div className="access-logs">
         <div className="logs-header">
           <div className="logs-title">
-            <h2>Access Logs</h2>
-            <p className="logs-subtitle">Monitor all gate access attempts</p>
           </div>
         </div>
         <div className="card" style={{ textAlign: 'center', padding: '60px' }}>
@@ -215,8 +213,6 @@ const AccessLogs = () => {
       
       <div className="logs-header">
         <div className="logs-title">
-          <h2>Access Logs</h2>
-          <p className="logs-subtitle">Monitor all gate access attempts</p>
         </div>
         <button className="btn btn-primary" onClick={handleExport}>
           <Download size={16} />
