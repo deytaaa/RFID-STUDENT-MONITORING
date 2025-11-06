@@ -6,11 +6,10 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import './AccessLogs.css'
 
-const AccessLogs = () => {
+const ExitLogs = () => {
   const [logs, setLogs] = useState([])
   const [filteredLogs, setFilteredLogs] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
   const [filterDate, setFilterDate] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
@@ -18,40 +17,33 @@ const AccessLogs = () => {
   const logsPerPage = 10
 
   useEffect(() => {
-    loadAccessLogs()
+    loadExitLogs()
 
     // Set up WebSocket listener for real-time student taps
     const handleStudentTap = (tapEvent) => {
-      console.log('🔔 New student tap in AccessLogs:', tapEvent)
-      
-      // Add new tap to logs (prepend to show latest first)
-      const newLog = {
-        id: tapEvent.id,
-        timestamp: new Date(tapEvent.timestamp).toLocaleString(),
-        user: tapEvent.user,
-        rfid: tapEvent.rfid,
-        status: tapEvent.status,
-        location: tapEvent.location
+      if (tapEvent.status === 'exited') {
+        const newLog = {
+          id: tapEvent.id,
+          timestamp: new Date(tapEvent.timestamp).toLocaleString(),
+          user: tapEvent.user,
+          rfid: tapEvent.rfid,
+          status: tapEvent.status,
+          location: tapEvent.location
+        }
+        setLogs(prevLogs => [newLog, ...prevLogs])
+        setFilteredLogs(prevFiltered => [newLog, ...prevFiltered])
       }
-      
-      setLogs(prevLogs => [newLog, ...prevLogs])
-      setFilteredLogs(prevFiltered => [newLog, ...prevFiltered])
     }
-
-    // Connect WebSocket and listen for student taps
     WebSocketService.connect()
     WebSocketService.on('studentTap', handleStudentTap)
-
-    // Cleanup on unmount
     return () => {
       WebSocketService.off('studentTap', handleStudentTap)
     }
   }, [])
 
-  const loadAccessLogs = async () => {
+  const loadExitLogs = async () => {
     setLoading(true)
     setError(null)
-    // Only fetch if token exists
     const token = localStorage.getItem('token');
     if (!token) {
       setLoading(false);
@@ -59,71 +51,35 @@ const AccessLogs = () => {
       return;
     }
     try {
-      const response = await fetch('http://localhost:3000/api/access-logs', {
+      const response = await fetch('http://localhost:3000/api/access-logs/exit', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await response.json()
-      
       if (data.success && data.data) {
-        // Transform backend data to frontend format
         const transformedLogs = data.data.map(log => ({
           id: log._id,
           timestamp: new Date(log.timestamp).toLocaleString(),
           user: log.userId?.name || log.userId?.email || 'Unknown User',
           rfid: log.userId?.rfidTag || log.rfidTag || 'Unknown',
-          status: log.status,
+          status: log.status || (log.direction === 'exit' ? 'exited' : 'unknown'),
           location: log.deviceId?.location || 'Unknown Location'
         }))
-        
         setLogs(transformedLogs)
         setFilteredLogs(transformedLogs)
       } else {
-        // Backend returned no data - show clean empty state
         setLogs([])
         setFilteredLogs([])
       }
-    } catch (err) {
-      console.error('Failed to load access logs:', err)
-      
-      // For demo purposes, provide some sample data when backend is unavailable
-      const demoData = [
-        {
-          id: 'demo-1',
-          timestamp: new Date(Date.now() - 2 * 60000).toLocaleString(),
-          user: 'Demo User',
-          rfid: 'DEMO001',
-          status: 'entered',
-          location: 'Main Gate'
-        },
-        {
-          id: 'demo-2', 
-          timestamp: new Date(Date.now() - 5 * 60000).toLocaleString(),
-          user: 'Sample Student',
-          rfid: 'DEMO002',
-          status: 'entered',
-          location: 'Main Gate'
-        },
-        {
-          id: 'demo-3',
-          timestamp: new Date(Date.now() - 12 * 60000).toLocaleString(),
-          user: 'Unknown User',
-          rfid: 'DEMO999',
-          status: 'denied',
-          location: 'Main Gate'
-        }
-      ]
-      
-      setLogs(demoData)
-      setFilteredLogs(demoData)
-      setError('Backend unavailable - showing demo data. Real data will appear when server is connected.')
-    } finally {
-      setLoading(false)
+    } catch {
+      setError('Failed to fetch exit logs.')
+      setLogs([])
+      setFilteredLogs([])
     }
+    setLoading(false)
   }
 
   useEffect(() => {
     let filtered = logs
-
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(log => 
@@ -131,12 +87,6 @@ const AccessLogs = () => {
         log.rfid.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
-
-    // Filter by status
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(log => log.status === filterStatus)
-    }
-
     // Filter by date
     if (filterDate) {
       filtered = filtered.filter(log => {
@@ -144,15 +94,20 @@ const AccessLogs = () => {
         return logDate === filterDate
       })
     }
-
     setFilteredLogs(filtered)
     setCurrentPage(1)
-  }, [searchTerm, filterStatus, filterDate, logs])
+  }, [searchTerm, filterDate, logs])
+
+  // Pagination
+  const indexOfLastLog = currentPage * logsPerPage
+  const indexOfFirstLog = indexOfLastLog - logsPerPage
+  const currentLogs = filteredLogs.slice(indexOfFirstLog, indexOfLastLog)
+  const totalPages = Math.ceil(filteredLogs.length / logsPerPage)
 
   const handleExportPDF = () => {
     if (!filteredLogs.length) return;
     const doc = new jsPDF();
-    doc.text('Entry Logs', 14, 16);
+    doc.text('Exit Logs', 14, 16);
     const tableColumn = ['Timestamp', 'User', 'RFID', 'Status', 'Location'];
     const tableRows = filteredLogs.map(log => [
       log.timestamp,
@@ -162,18 +117,12 @@ const AccessLogs = () => {
       log.location
     ]);
     autoTable(doc, { head: [tableColumn], body: tableRows, startY: 22 });
-    doc.save(`entry_logs_${new Date().toISOString().slice(0,10)}.pdf`);
+    doc.save(`exit_logs_${new Date().toISOString().slice(0,10)}.pdf`);
   }
-
-  // Pagination
-  const indexOfLastLog = currentPage * logsPerPage
-  const indexOfFirstLog = indexOfLastLog - logsPerPage
-  const currentLogs = filteredLogs.slice(indexOfFirstLog, indexOfLastLog)
-  const totalPages = Math.ceil(filteredLogs.length / logsPerPage)
 
   const getStatusClass = (status) => {
     if (!status) return 'status-unknown'
-    return status === 'entered' ? 'status-entered' : 'status-denied'
+    return status === 'exited' ? 'status-entered' : 'status-unknown'
   }
 
   if (loading) {
@@ -185,7 +134,7 @@ const AccessLogs = () => {
         </div>
         <div className="card" style={{ textAlign: 'center', padding: '60px' }}>
           <div className="loading-spinner" style={{ margin: '0 auto 16px' }}></div>
-          <p>Loading access logs...</p>
+          <p>Loading exit logs...</p>
         </div>
       </div>
     )
@@ -193,25 +142,21 @@ const AccessLogs = () => {
 
   return (
     <div className="access-logs">
-      {/* Show connection warning if backend is unavailable but we have demo data */}
-      {error && error.includes('demo data') && (
+      {error && (
         <div className="alert alert-warning" style={{ marginBottom: '20px' }}>
           <span>{error}</span>
-          <button className="btn btn-primary" onClick={loadAccessLogs} style={{ marginLeft: '16px' }}>
-            Retry Connection
+          <button className="btn btn-primary" onClick={loadExitLogs} style={{ marginLeft: '16px' }}>
+            Retry
           </button>
         </div>
       )}
-      
       <div className="logs-header">
-        <div className="logs-title">
-        </div>
-        <button className="btn btn-primary" onClick={handleExportPDF}>
-          <Download size={16} />
-          Export PDF
+       
+        <button className="btn btn-primary" style={{ marginLeft: 'auto' }}  onClick={handleExportPDF}>
+          <Download size={16}/>
+          Export PDF 
         </button>
       </div>
-
       <div className="logs-filters">
         <div className="search-filter">
           <Search size={16} />
@@ -223,26 +168,11 @@ const AccessLogs = () => {
             className="search-input"
           />
         </div>
-        
-        <div className="status-filter">
-          <Filter size={16} />
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">All Status</option>
-            <option value="entered">Entered</option>
-            <option value="denied">Denied</option>
-          </select>
-        </div>
-
         <div className="date-filter">
           <Calendar size={16} />
           <input type="date" className="date-input" value={filterDate} onChange={e => setFilterDate(e.target.value)} />
         </div>
       </div>
-
       <div className="logs-table-container">
         <table className="logs-table">
           <thead>
@@ -262,8 +192,8 @@ const AccessLogs = () => {
                   <td className="user">{log.user}</td>
                   <td className="rfid">{log.rfid}</td>
                   <td>
-                    <span className={`status-badge ${getStatusClass(log.status)}`}>
-                      {(log.status || 'unknown').toUpperCase()}
+                    <span className={`status-badge status-entered`}>
+                      {(log.status || 'exited').toUpperCase()}
                     </span>
                   </td>
                   <td className="location">{log.location}</td>
@@ -274,9 +204,9 @@ const AccessLogs = () => {
                 <td colSpan="5" style={{ textAlign: 'center', padding: '60px' }}>
                   <div className="empty-state">
                     <div className="empty-state-icon">📋</div>
-                    <div className="empty-state-title">No Access Logs</div>
+                    <div className="empty-state-title">No Exit Logs</div>
                     <div className="empty-state-description">
-                      Access logs will appear here when users scan their RFID cards
+                      Exit logs will appear here when users scan their RFID cards at the exit
                     </div>
                   </div>
                 </td>
@@ -285,7 +215,6 @@ const AccessLogs = () => {
           </tbody>
         </table>
       </div>
-
       {totalPages > 1 && (
         <div className="pagination">
           <button
@@ -295,11 +224,9 @@ const AccessLogs = () => {
           >
             Previous
           </button>
-          
           <div className="page-info">
             Page {currentPage} of {totalPages}
           </div>
-          
           <button
             className="btn btn-secondary"
             disabled={currentPage === totalPages}
@@ -313,4 +240,4 @@ const AccessLogs = () => {
   )
 }
 
-export default AccessLogs
+export default ExitLogs

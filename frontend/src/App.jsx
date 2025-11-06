@@ -11,6 +11,7 @@ import Header from './views/components/Header';
 import DashboardPresenter from './presenters/DashboardPresenter';
 import LoginPage from './views/pages/LoginPage';
 import UserManagement from './views/pages/UserManagement';
+import ExitLogs from './views/pages/ExitLogs';
 import './App.css';
 
 function App() {
@@ -125,6 +126,7 @@ function AppWithLocation({ gateStatus, systemStatus, user, onLogout, dashboardPr
   const getCurrentPage = (pathname) => {
     if (pathname === '/dashboard') return 'dashboard';
     if (pathname === '/access-logs') return 'access-logs';
+    if (pathname === '/exit-logs') return 'exit-logs';
     if (pathname === '/student-management') return 'student-management';
     if (pathname === '/settings') return 'settings';
     if (pathname === '/student-access') return 'student-access';
@@ -154,6 +156,7 @@ function AppWithLocation({ gateStatus, systemStatus, user, onLogout, dashboardPr
             <Route path="/realtime-rfid" element={<RealTimeRFID />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/user-management" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <UserManagement user={user} /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage users.</div>} />
+            <Route path="/exit-logs" element={<ExitLogs />} />
             {/* Add more routes as needed */}
             <Route path="*" element={<Navigate to="/dashboard" />} />
           </Routes>

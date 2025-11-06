@@ -60,6 +60,7 @@ const Header = ({ gateStatus, systemStatus, currentPage, user, onLogout }) => {
     const titles = {
       'dashboard': 'School Dashboard',
       'access-logs': 'Entry Logs',
+      'exit-logs': 'Exit Logs',
       'user-management': 'Admin Management',
       'student-management': 'Student Management',
       'settings': 'System Settings',

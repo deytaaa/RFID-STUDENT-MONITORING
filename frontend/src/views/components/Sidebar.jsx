@@ -47,6 +47,11 @@ const Sidebar = ({ user }) => {
       label: 'Entry Logs',
       icon: FileText
     },
+    {
+      id: 'exit-logs',
+      label: 'Exit Logs',
+      icon: FileText
+    },
     // Only show student management for superadmin
     ...(user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? [
       {

@@ -4,6 +4,7 @@ const accessLogController = require('../controllers/AccessLogController');
 const { authenticateJWT, requireAdmin } = require('../middleware/authMiddleware');
 
 // GET routes
+router.get('/exit', authenticateJWT, requireAdmin, accessLogController.getExitLogs);
 router.get('/', authenticateJWT, requireAdmin, accessLogController.getAllAccessLogs);
 router.get('/recent', authenticateJWT, requireAdmin, accessLogController.getRecentAccessLogs);
 router.get('/stats', authenticateJWT, requireAdmin, accessLogController.getAccessStats);

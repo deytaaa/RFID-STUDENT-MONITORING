@@ -28,7 +28,12 @@ const accessLogSchema = new mongoose.Schema(
     },
     location: {
       type: String,
-      default: "Main Gate",
+      default: "Main Entrance",
+    },
+    direction: {
+      type: String,
+      enum: ["entry", "exit"],
+      default: "entry",
     },
     method: {
       type: String,

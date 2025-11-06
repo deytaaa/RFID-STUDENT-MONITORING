@@ -82,7 +82,7 @@ const accessLogController = {
   // POST /api/access-logs - Create new access log (RFID scan)
   async createAccessLog(req, res) {
     try {
-      const { rfidTag, deviceId, location, method = "rfid", userId, studentName, course, status } = req.body;
+      const { rfidTag, deviceId, location, method = "rfid", userId, studentName, course, status, direction = "entry" } = req.body;
 
       // Validate required fields
       if (!rfidTag || !deviceId) {
@@ -127,6 +127,7 @@ const accessLogController = {
         location: location || device.location,
         method,
         reason: accessGranted ? undefined : reason,
+        direction,
       });
 
       await newLog.save();
@@ -143,11 +144,10 @@ const accessLogController = {
           timestamp: newLog.timestamp,
           user: studentName || (user ? user.name : 'Unknown Student'),
           rfid: rfidTag,
-          status: status || (accessGranted ? 'entered' : 'denied'),
+          status: status || (accessGranted ? (direction === 'exit' ? 'exited' : 'entered') : 'denied'),
           location: location || device.location || 'Unknown Location',
-          course: course || 'Unknown Course'
+          course: course || (user ? user.course : 'Unknown Course')
         };
-        
         // Emit to all connected clients
         io.emit('studentTap', tapEvent);
         console.log('📡 Student tap event emitted:', tapEvent);
@@ -305,6 +305,24 @@ const accessLogController = {
       });
     } catch (error) {
       console.error("Error fetching access stats:", error);
+      res.status(500).json({ success: false, message: "Server Error" });
+    }
+  },
+
+  // GET /api/access-logs/exit - Get all exit logs
+  async getExitLogs(req, res) {
+    try {
+      const { page = 1, limit = 20 } = req.query;
+      const skip = (page - 1) * limit;
+      const logs = await AccessLog.find({ direction: "exit" })
+        .sort({ timestamp: -1 })
+        .skip(skip)
+        .limit(Number(limit))
+        .populate("userId", "name email accessLevel course yearLevel")
+        .populate("deviceId", "name location deviceType");
+      res.json({ success: true, data: logs });
+    } catch (error) {
+      console.error("Error fetching exit logs:", error);
       res.status(500).json({ success: false, message: "Server Error" });
     }
   },

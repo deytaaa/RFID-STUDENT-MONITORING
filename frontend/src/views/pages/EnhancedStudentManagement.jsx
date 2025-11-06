@@ -359,22 +359,7 @@ const EnhancedStudentManagement = ({ user }) => {
     <div className="enhanced-student-management">
       {/* Header */}
       <div className="page-header">
-        
-        <div className="header-actions">
-          <button 
-            className="btn btn-secondary"
-            onClick={() => handleExport('csv')}
-          >
-            <Download size={16} />
-            Export CSV
-          </button>
-          <button 
-            className="btn btn-secondary"
-            onClick={() => handleExport('json')}
-          >
-            <FileText size={16} />
-            Export JSON
-          </button>
+        <div className="header-actions" style={{ marginLeft: 'auto' }}>
           <button 
             className="btn btn-primary"
             onClick={() => setShowAddModal(true)}

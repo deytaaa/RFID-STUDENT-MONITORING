@@ -154,7 +154,7 @@ const UserManagement = ({ user }) => {
   return (
     <div className="um-page">
       <div className="um-header-card">
-        <button className="um-btn um-btn-primary" onClick={() => setShowCreateModal(true)}>
+        <button className="um-btn um-btn-primary" style={{ marginLeft: 'auto' }} onClick={() => setShowCreateModal(true)}>
           + Create Admin
         </button>
       </div>
