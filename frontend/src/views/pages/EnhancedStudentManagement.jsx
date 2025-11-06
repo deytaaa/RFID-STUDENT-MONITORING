@@ -295,41 +295,6 @@ const EnhancedStudentManagement = ({ user }) => {
     }
   }
   
-  // Export functionality
-  const handleExport = async (format = 'json') => {
-    try {
-      const params = new URLSearchParams({ format, ...filters })
-      const response = await ApiService.get(`/students/export/data?${params}`)
-      
-      if (format === 'csv') {
-        // Handle CSV download
-        const blob = new Blob([response], { type: 'text/csv' })
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = 'students.csv'
-        a.click()
-        window.URL.revokeObjectURL(url)
-      } else {
-        // Handle JSON download
-        const blob = new Blob([JSON.stringify(response.data, null, 2)], { 
-          type: 'application/json' 
-        })
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = 'students.json'
-        a.click()
-        window.URL.revokeObjectURL(url)
-      }
-      
-      showNotification(`Students exported as ${format.toUpperCase()}`)
-    } catch (error) {
-      showNotification('Failed to export students', 'error')
-      console.error('Error exporting students:', error)
-    }
-  }
-  
   // Removed obsolete useEffect for manual tab URL update
 
   // Wait for user context before permission checks

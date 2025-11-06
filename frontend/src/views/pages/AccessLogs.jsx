@@ -23,19 +23,19 @@ const AccessLogs = () => {
     // Set up WebSocket listener for real-time student taps
     const handleStudentTap = (tapEvent) => {
       console.log('🔔 New student tap in AccessLogs:', tapEvent)
-      
-      // Add new tap to logs (prepend to show latest first)
-      const newLog = {
-        id: tapEvent.id,
-        timestamp: new Date(tapEvent.timestamp).toLocaleString(),
-        user: tapEvent.user,
-        rfid: tapEvent.rfid,
-        status: tapEvent.status,
-        location: tapEvent.location
+      // Only add entry events
+      if (tapEvent.status === 'entered') {
+        const newLog = {
+          id: tapEvent.id,
+          timestamp: new Date(tapEvent.timestamp).toLocaleString(),
+          user: tapEvent.user,
+          rfid: tapEvent.rfid,
+          status: tapEvent.status,
+          location: tapEvent.location
+        }
+        setLogs(prevLogs => [newLog, ...prevLogs])
+        setFilteredLogs(prevFiltered => [newLog, ...prevFiltered])
       }
-      
-      setLogs(prevLogs => [newLog, ...prevLogs])
-      setFilteredLogs(prevFiltered => [newLog, ...prevFiltered])
     }
 
     // Connect WebSocket and listen for student taps
@@ -75,8 +75,9 @@ const AccessLogs = () => {
           location: log.deviceId?.location || 'Unknown Location'
         }))
         
-        setLogs(transformedLogs)
-        setFilteredLogs(transformedLogs)
+        const entryLogs = transformedLogs.filter(log => log.status === 'entered')
+        setLogs(entryLogs)
+        setFilteredLogs(entryLogs)
       } else {
         // Backend returned no data - show clean empty state
         setLogs([])
