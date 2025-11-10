@@ -8,7 +8,8 @@
 const { SerialPort } = require('serialport');
 const { ReadlineParser } = require('@serialport/parser-readline');
 const { AccessLog, User, Device } = require('../models');
-const Setting = require('../models/Settings'); // Add this import
+const Setting = require('../models/Settings');
+const NotificationController = require('../controllers/NotificationController');
 const axios = require('axios');
 
 class ArduinoSerialService {
@@ -173,11 +174,41 @@ class ArduinoSerialService {
         this.sendCommand(`ACCESS_DENIED:${formattedID}`);
         console.log(`🚫 Access denied for ${formattedID}`);
         status = 'denied';
+        
+        // Create notification for all active admins
+        await this.createNotificationForAllAdmins({
+          type: 'access_denied',
+          title: 'Access Denied',
+          message: `Unauthorized access attempt with card ****${formattedID.slice(-3)}`,
+          data: {
+            cardID: formattedID,
+            deviceId: device?._id?.toString(),
+            location: device?.location || 'Main Gate'
+          },
+          priority: 'high',
+          category: 'security'
+        });
       } else {
         // Send ACCESS_GRANTED with delay
         this.sendCommand(`ACCESS_GRANTED:${formattedID}:${autoLockDelay}`);
         status = 'entered';
         console.log(`✅ Access granted for ${user.name}`);
+        
+        // Create notification for successful access (optional, lower priority)
+        await this.createNotificationForAllAdmins({
+          type: 'access_granted',
+          title: 'Access Granted',
+          message: `${user.name} entered via card ****${formattedID.slice(-3)}`,
+          data: {
+            cardID: formattedID,
+            studentId: user._id?.toString(),
+            studentName: user.name,
+            deviceId: device?._id?.toString(),
+            location: device?.location || 'Main Gate'
+          },
+          priority: 'low',
+          category: 'access'
+        });
       }
 
       // Emit event to React dashboard
@@ -200,8 +231,31 @@ class ArduinoSerialService {
   // ----------------------------
   // Access Control Event Handlers
   // ----------------------------
-  async handleAccessGranted(data) { console.log(`✅ Access granted event: ${data.cardID}`); }
-  async handleAccessDenied(data) { console.log(`🚫 Access denied event: ${data.cardID}`); }
+  async handleAccessGranted(data) { 
+    console.log(`✅ Access granted event: ${data.cardID}`);
+    
+    // Emit WebSocket event for frontend notifications
+    this.io.emit('access-granted', {
+      message: `Access granted for card ****${data.cardID.slice(-3)}`,
+      cardID: data.cardID,
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  async handleAccessDenied(data) { 
+    console.log(`🚫 Access denied event: ${data.cardID}`);
+    
+    // Emit WebSocket event for frontend notifications
+    const notificationData = {
+      message: `Access denied for card ****${data.cardID.slice(-3)}`,
+      cardID: data.cardID,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('📡 Emitting access-denied WebSocket event:', notificationData);
+    this.io.emit('access-denied', notificationData);
+    console.log('✅ WebSocket event emitted successfully');
+  }
 
   handleGateClosed(data) {
     console.log('🔒 Gate closed - ready');
@@ -270,6 +324,39 @@ class ArduinoSerialService {
       console.log('📝 Access log saved:', accessLog);
     } catch (err) {
       console.error('❌ Error saving access log:', err.message);
+    }
+  }
+
+  // ----------------------------
+  // Notification Helper Methods
+  // ----------------------------
+  async createNotificationForAllAdmins(notificationData) {
+    try {
+      // Find the first active admin (to avoid duplicates)
+      const firstAdmin = await User.findOne({
+        isActive: true,
+        $or: [
+          { role: 'admin' },
+          { role: 'superadmin' },
+          { accessLevel: 'admin' },
+          { accessLevel: 'superadmin' }
+        ]
+      });
+
+      if (firstAdmin) {
+        // Create notification for the first admin (will be broadcast to all via WebSocket)
+        const notification = await NotificationController.createNotification({
+          userId: firstAdmin._id,
+          ...notificationData
+        });
+        
+        console.log(`📧 Created notification for admin system`);
+        return notification;
+      } else {
+        console.warn('No active admin users found for notification');
+      }
+    } catch (error) {
+      console.error('❌ Error creating admin notifications:', error);
     }
   }
 

@@ -97,6 +97,7 @@ app.use('/api/system', systemRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/notifications', require('./src/routes/notificationRoutes'));
 
 // Serve profile pictures statically with CORS headers
 app.use('/uploads/profile-pictures', (req, res, next) => {
@@ -142,3 +143,6 @@ server.listen(port, async () => {
   // Initialize Arduino connection
   await initializeArduino();
 });
+
+// Export for external access
+module.exports = { server, io };

@@ -20,11 +20,11 @@ const AccessLogs = () => {
   useEffect(() => {
     loadAccessLogs()
 
-    // Set up WebSocket listener for real-time student taps
+    // Set up WebSocket listeners for real-time updates
     const handleStudentTap = (tapEvent) => {
       console.log('🔔 New student tap in AccessLogs:', tapEvent)
-      // Only add entry events
-      if (tapEvent.status === 'entered') {
+      // Add both entry events AND denied attempts
+      if (tapEvent.status === 'entered' || tapEvent.status === 'denied') {
         const newLog = {
           id: tapEvent.id,
           timestamp: new Date(tapEvent.timestamp).toLocaleString(),
@@ -38,13 +38,42 @@ const AccessLogs = () => {
       }
     }
 
-    // Connect WebSocket and listen for student taps
+    // Handle database deletions
+    const handleLogDeleted = (deleteEvent) => {
+      console.log('🗑️ AccessLog deleted:', deleteEvent);
+      if (deleteEvent.logId || deleteEvent.logIds) {
+        const deletedIds = Array.isArray(deleteEvent.logIds) 
+          ? deleteEvent.logIds 
+          : [deleteEvent.logId];
+        
+        setLogs(prevLogs => 
+          prevLogs.filter(log => !deletedIds.includes(log.id))
+        );
+        setFilteredLogs(prevFiltered => 
+          prevFiltered.filter(log => !deletedIds.includes(log.id))
+        );
+        console.log('✅ Removed deleted access logs from UI');
+      }
+    }
+
+    // Handle bulk database changes (like clearing all logs)
+    const handleLogsCleared = () => {
+      console.log('🗑️ All access logs cleared');
+      setLogs([]);
+      setFilteredLogs([]);
+    }
+
+    // Connect WebSocket and listen for events
     WebSocketService.connect()
     WebSocketService.on('studentTap', handleStudentTap)
+    WebSocketService.on('logDeleted', handleLogDeleted)
+    WebSocketService.on('logsCleared', handleLogsCleared)
 
     // Cleanup on unmount
     return () => {
       WebSocketService.off('studentTap', handleStudentTap)
+      WebSocketService.off('logDeleted', handleLogDeleted)
+      WebSocketService.off('logsCleared', handleLogsCleared)
     }
   }, [])
 
@@ -75,9 +104,12 @@ const AccessLogs = () => {
           location: log.deviceId?.location || 'Unknown Location'
         }))
         
-        const entryLogs = transformedLogs.filter(log => log.status === 'entered')
-        setLogs(entryLogs)
-        setFilteredLogs(entryLogs)
+        // Show both successful entries AND denied attempts
+        const accessLogs = transformedLogs.filter(log => 
+          log.status === 'entered' || log.status === 'denied'
+        )
+        setLogs(accessLogs)
+        setFilteredLogs(accessLogs)
       } else {
         // Backend returned no data - show clean empty state
         setLogs([])
@@ -277,7 +309,7 @@ const AccessLogs = () => {
                     <div className="empty-state-icon">📋</div>
                     <div className="empty-state-title">No Access Logs</div>
                     <div className="empty-state-description">
-                      Access logs will appear here when users scan their RFID cards
+                      Access logs will appear here when users scan their RFID cards (both authorized and unauthorized attempts)
                     </div>
                   </div>
                 </td>

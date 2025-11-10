@@ -108,6 +108,272 @@
   color: #475569;
 }
 
+.header-btn {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  color: #fff;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  line-height: 1.3;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  animation: notification-bounce 0.6s ease-out;
+}
+
+@keyframes notification-bounce {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.notification-dropdown {
+  position: absolute;
+  right: 0;
+  top: 48px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  width: 380px;
+  max-height: 500px;
+  overflow-y: auto;
+  z-index: 100;
+  border-radius: 12px;
+}
+
+.dropdown-header {
+  font-weight: 600;
+  font-size: 16px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 12px 12px 0 0;
+}
+
+.mark-read-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.notification-dropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Enhanced notification item styles */
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.notification-item:hover {
+  background: #f8fafc;
+}
+
+.notification-item.unread {
+  background: linear-gradient(135deg, #fef7ff 0%, #f0f9ff 100%);
+  border-left: 3px solid #3b82f6;
+}
+
+.notification-item.read {
+  opacity: 0.7;
+}
+
+.notification-item.high {
+  border-left: 3px solid #ef4444;
+}
+
+.notification-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.notification-item[class*="access_denied"] .notification-icon {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.notification-item[class*="access_granted"] .notification-icon {
+  background: #f0fdf4;
+  color: #10b981;
+}
+
+.notification-item[class*="security"] .notification-icon {
+  background: #fefbeb;
+  color: #f59e0b;
+}
+
+.notification-item[class*="system"] .notification-icon {
+  background: #f0f9ff;
+  color: #3b82f6;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.notification-message {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.notification-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.notification-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.notification-location {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.notification-category {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.notification-category.security {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.notification-category.access {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.notification-category.system {
+  background: #f0f9ff;
+  color: #2563eb;
+}
+
+.priority-indicator {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.priority-indicator.high {
+  background: #ef4444;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.notification-dropdown li.empty {
+  text-align: center;
+  color: #9ca3af;
+  padding: 32px 16px;
+  font-style: italic;
+}
+
+/* Notification actions styling */
+.notification-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.mark-read-btn, .clear-all-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mark-read-btn {
+  color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.mark-read-btn:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.clear-all-btn {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.clear-all-btn:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+  transform: translateY(-1px);
+}
+
 /* User dropdown styles */
 .user-btn {
   display: flex;

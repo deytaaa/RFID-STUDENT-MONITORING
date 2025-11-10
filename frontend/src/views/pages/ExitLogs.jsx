@@ -19,7 +19,7 @@ const ExitLogs = () => {
   useEffect(() => {
     loadExitLogs()
 
-    // Set up WebSocket listener for real-time student taps
+    // Set up WebSocket listeners for real-time updates
     const handleStudentTap = (tapEvent) => {
       if (tapEvent.status === 'exited') {
         const newLog = {
@@ -34,14 +34,46 @@ const ExitLogs = () => {
         setFilteredLogs(prevFiltered => [newLog, ...prevFiltered])
       }
     }
+
+    // Handle database deletions
+    const handleLogDeleted = (deleteEvent) => {
+      console.log('🗑️ Log deleted:', deleteEvent);
+      if (deleteEvent.logId || deleteEvent.logIds) {
+        const deletedIds = Array.isArray(deleteEvent.logIds) 
+          ? deleteEvent.logIds 
+          : [deleteEvent.logId];
+        
+        setLogs(prevLogs => 
+          prevLogs.filter(log => !deletedIds.includes(log.id))
+        );
+        setFilteredLogs(prevFiltered => 
+          prevFiltered.filter(log => !deletedIds.includes(log.id))
+        );
+        console.log('✅ Removed deleted logs from UI');
+      }
+    }
+
+    // Handle bulk database changes (like clearing all logs)
+    const handleLogsCleared = () => {
+      console.log('🗑️ All logs cleared');
+      setLogs([]);
+      setFilteredLogs([]);
+    }
+
     WebSocketService.connect()
     WebSocketService.on('studentTap', handleStudentTap)
+    WebSocketService.on('logDeleted', handleLogDeleted)
+    WebSocketService.on('logsCleared', handleLogsCleared)
+    
     return () => {
       WebSocketService.off('studentTap', handleStudentTap)
+      WebSocketService.off('logDeleted', handleLogDeleted)
+      WebSocketService.off('logsCleared', handleLogsCleared)
     }
   }, [])
 
   const loadExitLogs = async () => {
+    console.log('🔄 Loading exit logs from database...');
     setLoading(true)
     setError(null)
     const token = localStorage.getItem('token');
@@ -55,7 +87,9 @@ const ExitLogs = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await response.json()
-      if (data.success && data.data) {
+      console.log('📊 Exit logs API response:', data);
+      
+      if (data.success && data.data && data.data.length > 0) {
         const transformedLogs = data.data.map(log => ({
           id: log._id,
           timestamp: new Date(log.timestamp).toLocaleString(),
@@ -64,14 +98,19 @@ const ExitLogs = () => {
           status: log.status || (log.direction === 'exit' ? 'exited' : 'unknown'),
           location: log.deviceId?.location || 'Unknown Location'
         }))
+        console.log('✅ Found', transformedLogs.length, 'exit logs');
         setLogs(transformedLogs)
         setFilteredLogs(transformedLogs)
       } else {
+        // No data found - clear everything
+        console.log('📭 No exit logs found in database - clearing UI');
         setLogs([])
         setFilteredLogs([])
       }
-    } catch {
+    } catch (error) {
+      console.error('❌ Error loading exit logs:', error);
       setError('Failed to fetch exit logs.')
+      // Clear data on error too
       setLogs([])
       setFilteredLogs([])
     }
@@ -125,6 +164,16 @@ const ExitLogs = () => {
     return status === 'exited' ? 'status-entered' : 'status-unknown'
   }
 
+  // Optional: Auto-refresh every 60 seconds to stay in sync with database
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      console.log('🔄 Auto-refreshing exit logs to sync with database...');
+      loadExitLogs();
+    }, 60000); // 60 seconds
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   if (loading) {
     return (
       <div className="access-logs">
@@ -151,7 +200,6 @@ const ExitLogs = () => {
         </div>
       )}
       <div className="logs-header">
-       
         <button className="btn btn-primary" style={{ marginLeft: 'auto' }}  onClick={handleExportPDF}>
           <Download size={16}/>
           Export PDF 

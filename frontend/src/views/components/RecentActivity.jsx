@@ -25,7 +25,7 @@ const RecentActivity = ({ data }) => {
           {data.map((item) => {
             let statusText = ''
             let displayName = item.user
-            if (item.user === 'Unknown' || !item.user || item.user === 'Card not registered') {
+            if (item.user === 'Unknown' || item.user === 'Unknown User' || !item.user || item.user === 'Card not registered') {
               statusText = 'Not Registered'
               displayName = 'Unknown User'
             } else if (item.status === 'granted') {

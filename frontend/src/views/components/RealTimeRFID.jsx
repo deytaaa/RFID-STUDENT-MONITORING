@@ -146,7 +146,7 @@ const RealTimeRFID = () => {
           status: 'granted',
           timestamp: new Date(),
           message: 'Access Granted - Automatic gate opening authorized',
-          student: student
+          student: student && student.name && student.name !== 'Card not registered' && student.name !== 'Unable to fetch card info' ? student : { name: 'Unknown User', profilePicture: '', cardID: data.cardID }
         }
         return [activity, ...prev.slice(0, 9)]
       })
@@ -197,7 +197,7 @@ const RealTimeRFID = () => {
           status: 'denied',
           timestamp: new Date(),
           message: 'Access Denied - Not Active',
-          student: student && student.status === 'unauthorized' ? { name: 'Unauthorized User', profilePicture: '', cardID: data.cardID } : student
+          student: !student || student.name === 'Card not registered' || student.name === 'Unable to fetch card info' ? { name: 'Unknown User', profilePicture: '', cardID: data.cardID } : student
         }
         return [activity, ...prev.slice(0, 9)]
       })
@@ -299,20 +299,34 @@ const RealTimeRFID = () => {
   // Move fetchRecentActivity outside useEffect so it can be called from anywhere
   const fetchRecentActivity = React.useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:3000/api/access-logs?limit=10');
+      const token = localStorage.getItem('token');
+      if (!token) return; // Skip if not authenticated
+      
+      const res = await fetch('http://localhost:3000/api/access-logs?limit=10', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         const result = await res.json();
         if (result.success && Array.isArray(result.data) && result.data.length > 0) {
           // Fetch student info for each activity
           const activities = await Promise.all(result.data.map(async log => {
-            const student = log.cardID ? await fetchStudentByCardID(log.cardID) : null;
+            // Use rfidTag instead of cardID for database records
+            const cardID = log.rfidTag || log.cardID;
+            const student = cardID ? await fetchStudentByCardID(cardID) : null;
+            
+            // Handle unknown users properly
+            let displayStudent = student;
+            if (!student || student.name === 'Card not registered' || student.name === 'Unable to fetch card info') {
+              displayStudent = { name: 'Unknown User', profilePicture: '', cardID: cardID };
+            }
+            
             return {
               id: log._id || `${Date.now()}-${Math.random()}`,
-              cardID: log.cardID,
+              cardID: cardID,
               status: log.accessGranted ? 'granted' : 'denied',
               timestamp: log.timestamp,
               message: log.accessGranted ? 'Access Granted' : 'Access Denied',
-              student: student
+              student: displayStudent
             };
           }));
           setRecentActivity(activities);

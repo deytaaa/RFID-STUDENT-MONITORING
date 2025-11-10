@@ -4,7 +4,9 @@ import {
   Users,
   AlertTriangle,
   Activity,
-  Wifi
+  Wifi,
+  LogOut,
+  LogIn
 } from "lucide-react";
 import DashboardCard from "../components/DashboardCard";
 import AccessChart from "../components/AccessChart";
@@ -17,6 +19,8 @@ const Dashboard = () => {
     totalDenied: 0,
     authorizedToday: 0,
     deniedToday: 0,
+    totalExit: 0,
+    todayExit: 0,
     systemUptime: "100%",
   });
 
@@ -29,14 +33,12 @@ const Dashboard = () => {
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    // Only fetch if token exists
     const token = localStorage.getItem("token");
     if (!token) {
       setLoading(false);
       setError("Not authenticated. Please log in.");
       return;
     }
-    // Fetch access logs from backend
     try {
       const logsResponse = await fetch(
         "http://localhost:3000/api/access-logs",
@@ -46,7 +48,6 @@ const Dashboard = () => {
       );
       const logs = await logsResponse.json();
 
-      // Fetch system status
       const statusResponse = await fetch(
         "http://localhost:3000/api/system/status",
         {
@@ -59,7 +60,6 @@ const Dashboard = () => {
         if (statusJson.data.metrics) {
           setSystemMetrics(statusJson.data.metrics);
         }
-        // Convert uptime (seconds) to human-readable format
         if (typeof statusJson.data.uptime === "number") {
           const uptimeSec = statusJson.data.uptime;
           const hours = Math.floor(uptimeSec / 3600);
@@ -69,7 +69,6 @@ const Dashboard = () => {
         }
       }
 
-      // Calculate stats from real API data
       const todayLogs = logs.success
         ? logs.data.filter((log) => {
             const today = new Date().toDateString();
@@ -80,15 +79,17 @@ const Dashboard = () => {
 
       setStats({
         totalAccess: logs.success
-          ? logs.data.filter((log) => log.accessGranted === true).length
+          ? logs.data.filter((log) => log.accessGranted === true && log.direction !== "exit").length
           : 0,
         totalDenied: logs.success
           ? logs.data.filter((log) => log.accessGranted === false).length
           : 0,
-        authorizedToday: todayLogs.filter((log) => log.accessGranted === true)
-          .length,
-        deniedToday: todayLogs.filter((log) => log.accessGranted === false)
-          .length,
+        authorizedToday: todayLogs.filter((log) => log.accessGranted === true && log.direction !== "exit").length,
+        deniedToday: todayLogs.filter((log) => log.accessGranted === false).length,
+        totalExit: logs.success
+          ? logs.data.filter((log) => log.accessGranted === true && log.direction === "exit").length
+          : 0,
+        todayExit: todayLogs.filter((log) => log.accessGranted === true && log.direction === "exit").length,
         systemUptime: uptimeString,
       });
 
@@ -122,36 +123,13 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
 
-      // Provide demo data when backend is unavailable
-      const demoActivity = [
-        {
-          id: "demo-1",
-          user: "Demo User",
-          rfid: "****001",
-          time: "2 min ago",
-          status: "granted",
-        },
-        {
-          id: "demo-2",
-          user: "Sample Student",
-          rfid: "****002",
-          time: "5 min ago",
-          status: "granted",
-        },
-        {
-          id: "demo-3",
-          user: "Unknown User",
-          rfid: "****999",
-          time: "12 min ago",
-          status: "denied",
-        },
-      ];
-
       setStats({
         totalAccess: 105,
         totalDenied: 20,
         authorizedToday: 8,
         deniedToday: 2,
+        totalExit: 50,
+        todayExit: 4,
         systemUptime: "99.5%",
       });
       setChartData([]);
@@ -164,32 +142,15 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    // Load initial data
     loadDashboardData();
 
-    // Set up WebSocket listener for real-time student taps
     const handleStudentTap = (tapEvent) => {
-      console.log("🔔 Real-time student tap received:", tapEvent);
-
-      // Update stats
-      setStats((prevStats) => ({
-        ...prevStats,
-        totalAccess: prevStats.totalAccess + 1,
-        authorizedToday:
-          tapEvent.status === "granted"
-            ? prevStats.authorizedToday + 1
-            : prevStats.authorizedToday,
-      }));
-
-      // Refresh chart data from backend
       loadDashboardData();
     };
 
-    // Connect WebSocket and listen for student taps
     WebSocketService.connect();
     WebSocketService.on("studentTap", handleStudentTap);
 
-    // Cleanup on unmount
     return () => {
       WebSocketService.off("studentTap", handleStudentTap);
     };
@@ -211,7 +172,6 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
-      {/* Show connection warning if backend is unavailable but we have demo data */}
       {error && error.includes("demo data") && (
         <div className="alert alert-warning" style={{ marginBottom: "20px" }}>
           <AlertTriangle size={16} />
@@ -239,6 +199,18 @@ const Dashboard = () => {
           value={stats.authorizedToday}
           icon={Users}
           color="#10b981"
+        />
+        <DashboardCard
+          title="Total Exits"
+          value={stats.totalExit}
+          icon={LogOut}
+          color="#3b82f6"
+        />
+        <DashboardCard
+          title="Today's Exits"
+          value={stats.todayExit}
+          icon={LogIn}
+          color="#2563eb"
         />
         <DashboardCard
           title="Total Denied"

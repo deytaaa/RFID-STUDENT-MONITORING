@@ -59,7 +59,7 @@ const StudentAccessTracker = () => {
       }
       try {
         // Load recent access logs
-        const accessResponse = await fetch('http://localhost:3001/api/access-logs?limit=10', {
+        const accessResponse = await fetch('http://localhost:3000/api/access-logs?limit=10', {
           headers: { 'Authorization': `Bearer ${token}` }
         })
         const accessData = await accessResponse.json()
