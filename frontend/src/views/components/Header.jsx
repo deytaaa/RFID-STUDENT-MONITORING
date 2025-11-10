@@ -251,7 +251,6 @@ const Header = ({ gateStatus, systemStatus, currentPage, user, onLogout }) => {
       "student-management": "Student Management",
       settings: "System Settings",
       "device-management": "Device Management",
-      "student-access": "Student Access Dashboard",
       "realtime-rfid": "Real Time Monitoring",
     };
     return titles[page] || "School Dashboard";

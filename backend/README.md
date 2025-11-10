@@ -2,14 +2,42 @@
 
 A comprehensive Node.js/Express backend for managing and monitoring an RFID-enabled IoT-based gate and student access control system for Pateros Technological College.
 
+> **System Architecture**: Students interact with the system exclusively through **hardware RFID card readers**. The web interface serves **administrators only** for monitoring, managing, and configuring the system.
+
+## 🏗️ System Architecture
+
+### **🎯 Core Concept**
+
+This is a **student monitoring system** where students interact exclusively with hardware RFID readers. The web interface is designed solely for administrative purposes.
+
+### **👥 User Interaction Model**
+
+- **🎓 Students**:
+
+  - Tap RFID cards on physical hardware readers at school gates
+  - No web interface access or login capabilities
+  - Managed as data records by MIS department
+
+- **�‍♂️ Admin (Security Guard)**:
+
+  - Access monitoring dashboard for real-time security oversight
+  - View student access attempts, entry/exit logs, and security alerts
+  - Receive notifications for unauthorized access attempts
+
+- **� Superadmin (MIS - Management Information Systems)**:
+  - Complete system administration and configuration
+  - Manage student data, RFID card assignments, and user accounts
+  - System maintenance, reports generation, and hardware configuration
+
 ## 🚀 Features
 
-### **Authentication & Authorization**
+### **School Staff Authentication & Authorization**
 
-- **JWT-based Authentication**: Secure token-based login system
-- **Role-Based Access Control**: Superadmin, admin, and student roles with granular permissions
-- **Profile Management**: User profile updates with profile picture uploads
-- **Password Security**: Bcrypt encryption for secure password storage
+- **JWT-based Authentication**: Secure token-based login system for school staff
+- **Role-Based Access Control**: Security Guard (admin) and MIS (superadmin) roles
+- **Profile Management**: Staff profile updates with profile picture uploads
+- **Password Security**: Bcrypt encryption for secure staff password storage
+- **Student Data Management**: Students are managed as data records by MIS (no login access)
 
 ### **Real-Time Hardware Integration**
 
@@ -19,12 +47,13 @@ A comprehensive Node.js/Express backend for managing and monitoring an RFID-enab
 - **Hardware Auto-Discovery**: Automatic Arduino port detection and connection
 - **Gate Control**: Servo motor control for automated gate opening/closing
 
-### **Student & User Management**
+### **Student & School Staff Management**
 
-- **Student Registration**: Complete student profile management with RFID card assignment
-- **User Administration**: Create, edit, and deactivate users (students, admins, superadmins)
-- **Profile Pictures**: Multer-based file upload for student/user profile images
-- **Bulk Operations**: Support for bulk student data import/export
+- **Student Profile Management**: Complete student data management with RFID card assignment (MIS-managed)
+- **School Staff Management**: MIS creates and manages Security Guard accounts
+- **Profile Pictures**: Multer-based file upload for student profile images (MIS-uploaded)
+- **Bulk Operations**: Support for bulk student data import/export by MIS department
+- **RFID Card Linking**: MIS assigns and manages RFID cards for students
 
 ### **Access Control & Logging**
 

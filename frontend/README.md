@@ -1,6 +1,32 @@
 # QUACKCESS: RFID Gate Monitoring Frontend
 
-A comprehensive React-based frontend dashboard for monitoring and managing an RFID-enabled IoT-based gate and student access control system for Pateros Technological College.
+A comprehensive React-based **school administration dashboard** for monitoring and managing an RFID-enabled IoT-based gate and student access control system for Pateros Technological College.
+
+> **School Context**: This web interface is designed exclusively for **school staff** - Security Guards for monitoring and MIS for full administration. Students interact with the system only through **hardware RFID card readers** at school gates.
+
+## 🏗️ System Architecture
+
+This system follows a **hardware-first approach** for students:
+
+### **👥 User Roles & Access**
+
+- **🎓 Students**:
+
+  - **Hardware Only**: Tap RFID cards on physical readers at school gates
+  - **No Web Access**: Students do not log into or use the web interface
+  - **Automatic Identification**: System automatically identifies students via RFID cards
+
+- **�‍♂️ Admin (Security Guard)**:
+
+  - **Monitoring Dashboard Access**: Real-time monitoring of student access attempts
+  - **Security Oversight**: View entry/exit logs and receive security notifications
+  - **Student Activity Monitoring**: Track student access patterns and unauthorized attempts
+
+- **� Superadmin (MIS - Management Information Systems)**:
+  - **Full System Control**: Complete administrative control over the entire system
+  - **Student Data Management**: Add, edit, and manage student profiles and RFID assignments
+  - **User Account Management**: Create and manage security guard accounts
+  - **System Configuration**: Access to all system settings, hardware configuration, and reports
 
 ## 🚀 Features
 
@@ -20,13 +46,14 @@ A comprehensive React-based frontend dashboard for monitoring and managing an RF
 - **User Identification**: Automatic user lookup with profile pictures
 - **Status Categorization**: Clear distinction between granted, denied, and unauthorized access
 
-### **Professional User Management**
+### **School Staff User Management**
 
-- **Student Management**: Complete CRUD operations for student profiles
-- **RFID Card Assignment**: Link students to RFID cards with validation
-- **Profile Picture Upload**: Drag-and-drop profile picture management
-- **Bulk Operations**: Import/export student data capabilities
-- **Role-Based Permissions**: Superadmin-only access to sensitive operations
+- **Student Data Management**: Complete CRUD operations for student profiles (MIS-only)
+- **RFID Card Assignment**: MIS staff link students to RFID cards with validation
+- **Profile Picture Upload**: Drag-and-drop profile picture management for student records
+- **Bulk Operations**: Import/export student data capabilities for MIS department
+- **Role-Based Permissions**: MIS-only access to sensitive administrative operations
+- **Security Guard Account Management**: MIS creates and manages Security Guard accounts
 
 ### **Enhanced Notification System**
 
@@ -131,13 +158,15 @@ A comprehensive React-based frontend dashboard for monitoring and managing an RF
 - `npm run preview` - Preview production build locally
 - `npm run lint` - Run ESLint code analysis
 
-### Default Login Credentials
+### Default MIS Login
 
-For initial setup, use these default credentials:
+For initial setup, use these default MIS (Management Information Systems) credentials:
 
-- **Username:** admin@example.com
-- **Password:** admin123
-- **Role:** Superadmin
+- **Username:** mis@paterostechnologicalcollege.edu.ph
+- **Password:** mis123
+- **Role:** Superadmin (MIS)
+
+> **Important**: Only school staff (Security Guards and MIS) have web login access. Students do not have login credentials and interact with the system only through hardware RFID readers at school gates.
 
 ## 📁 Project Structure
 
@@ -152,8 +181,7 @@ frontend/
 │   │   │   ├── EnhancedStudentManagement.jsx  # Student CRUD operations
 │   │   │   ├── UserManagement.jsx         # Admin user management
 │   │   │   ├── Settings.jsx               # System configuration
-│   │   │   ├── LoginPage.jsx              # Authentication page
-│   │   │   └── StudentAccessDashboard.jsx # Student-specific dashboard
+│   │   │   └── LoginPage.jsx              # Authentication page
 │   │   └── components/        # Reusable UI components
 │   │       ├── Header.jsx     # Top navigation with notifications
 │   │       ├── Sidebar.jsx    # Left navigation menu
@@ -161,8 +189,7 @@ frontend/
 │   │       ├── RecentActivity.jsx     # Activity feed component
 │   │       ├── DashboardCard.jsx      # Dashboard stat cards
 │   │       ├── AccessChart.jsx        # Data visualization
-│   │       ├── StudentModals.jsx      # Student form modals
-│   │       └── RFIDTestPanel.jsx      # Hardware testing
+│   │       └── StudentModals.jsx      # Student form modals
 │   ├── services/              # External service integrations
 │   │   ├── ApiService.js      # HTTP API client
 │   │   ├── WebSocketService.js        # Real-time communication

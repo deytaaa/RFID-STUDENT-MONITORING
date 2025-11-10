@@ -65,11 +65,14 @@ const Sidebar = ({ user }) => {
         icon: Users
       }
     ] : []),
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: Settings
-    }
+    // Only show settings for superadmin
+    ...(user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? [
+      {
+        id: 'settings',
+        label: 'Settings',
+        icon: Settings
+      }
+    ] : [])
   ]
 
   return (
