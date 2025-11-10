@@ -33,7 +33,7 @@ Brown (GND)   →    GND
 Orange (PWM)  →    Pin 6
 ```
 
-### LCD Display (16x2 with I2C) OPTIONAL
+### LCD Display (16x2 with I2C)
 
 ```
 LCD I2C       →    Arduino UNO
@@ -59,7 +59,7 @@ Positive      →    Pin 5
 Negative      →    GND
 ```
 
-### Ultrasonic Sensor HC-SR04 OPTIONAL
+### Ultrasonic Sensor HC-SR04
 
 ```
 HC-SR04       →    Arduino UNO
