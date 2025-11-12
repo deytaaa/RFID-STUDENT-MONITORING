@@ -45,7 +45,7 @@ class ApiService {
           try {
             const errorData = await response.json();
             errorMessage = errorData.message || errorMessage;
-          } catch (e) {
+          } catch {
             // If JSON parsing fails, use default error message
           }
         }

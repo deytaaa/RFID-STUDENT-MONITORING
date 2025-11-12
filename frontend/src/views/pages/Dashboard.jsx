@@ -132,7 +132,7 @@ const Dashboard = () => {
   useEffect(() => {
     loadDashboardData();
 
-    const handleStudentTap = (tapEvent) => {
+    const handleStudentTap = () => {
       loadDashboardData();
     };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Save, Wifi, Shield, Bell, Database, Clock, CheckCircle } from 'lucide-react'  
 import ApiService from '../../services/ApiService.js'
 import './Settings.css'

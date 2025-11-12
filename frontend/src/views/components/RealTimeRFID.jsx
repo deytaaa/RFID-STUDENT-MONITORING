@@ -51,7 +51,7 @@ const RealTimeRFID = () => {
         })).then(setRecentActivity);
       }
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Persist state to localStorage whenever it changes
@@ -295,7 +295,7 @@ const RealTimeRFID = () => {
       WebSocketService.off('connected', handleConnected)
       WebSocketService.off('disconnected', handleDisconnected)
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Move fetchRecentActivity outside useEffect so it can be called from anywhere
   const fetchRecentActivity = React.useCallback(async () => {
@@ -402,7 +402,6 @@ const RealTimeRFID = () => {
         status: 'error'
       };
     }
-    return null;
   }
 
   const formatTime = (date) => {

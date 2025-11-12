@@ -156,10 +156,7 @@ const ExitLogs = () => {
     doc.save(`exit_logs_${new Date().toISOString().slice(0,10)}.pdf`);
   }
 
-  const getStatusClass = (status) => {
-    if (!status) return 'status-unknown'
-    return status === 'exited' ? 'status-entered' : 'status-unknown'
-  }
+
 
   // Optional: Auto-refresh every 60 seconds to stay in sync with database
   useEffect(() => {
