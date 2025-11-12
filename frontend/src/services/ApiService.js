@@ -36,10 +36,22 @@ class ApiService {
     }
     try {
       const response = await fetch(url, config);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
       const contentType = response.headers.get('content-type');
+      
+      if (!response.ok) {
+        // Try to get error message from response body
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            // If JSON parsing fails, use default error message
+          }
+        }
+        throw new Error(errorMessage);
+      }
+      
       if (contentType && contentType.includes('application/json')) {
         return await response.json();
       }
@@ -67,33 +79,18 @@ class ApiService {
     return this.request('DELETE', endpoint)
   }
 
-  // Specific API endpoints
-  async getUsers() {
-    return this.get('/students')
-  }
-
-  async getStudents() {
-    return this.get('/students')
-  }
-
-  async createUser(userData) {
-    return this.post('/students', userData)
+  // Student API endpoints
+  async getStudents(filters = {}) {
+    const queryParams = new URLSearchParams(filters).toString()
+    return this.get(`/students${queryParams ? `?${queryParams}` : ''}`)
   }
 
   async createStudent(studentData) {
     return this.post('/students', studentData)
   }
 
-  async updateUser(id, userData) {
-    return this.put(`/students/${id}`, userData)
-  }
-
   async updateStudent(id, studentData) {
     return this.put(`/students/${id}`, studentData)
-  }
-
-  async deleteUser(id) {
-    return this.delete(`/students/${id}`)
   }
 
   async deleteStudent(id) {
@@ -114,15 +111,63 @@ class ApiService {
   }
 
   async getSettings() {
-    return this.get('/system/settings')
+    return this.get('/settings')
   }
 
   async updateSettings(settings) {
-    return this.put('/system/settings', settings)
+    return this.put('/settings', settings)
   }
 
   async exportAccessLogs(format = 'csv') {
     return this.get(`/access-logs/export?format=${format}`)
+  }
+
+  // User management API endpoints
+  async getUsers(filters = {}) {
+    const queryParams = new URLSearchParams(filters).toString()
+    return this.get(`/users${queryParams ? `?${queryParams}` : ''}`)
+  }
+
+  async createUser(userData) {
+    return this.post('/users', userData)
+  }
+
+  async updateUser(id, userData) {
+    return this.put(`/users/${id}`, userData)
+  }
+
+  async deleteUser(id) {
+    return this.delete(`/users/${id}`)
+  }
+
+  async getNotifications() {
+    return this.get('/notifications')
+  }
+
+  async markNotificationAsRead(id) {
+    return this.put(`/notifications/${id}/read`, {})
+  }
+
+  // Profile picture upload
+  async uploadProfilePicture(userId, formData) {
+    const url = `${this.baseURL}/profile-picture/${userId}/upload-profile-picture`;
+    const token = localStorage.getItem('token');
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData // FormData object, don't set Content-Type
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return await response.json();
   }
 }
 

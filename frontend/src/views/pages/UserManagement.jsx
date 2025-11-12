@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import ApiService from '../../services/ApiService.js';
 import './UserManagement.css';
 
 const Spinner = () => (
@@ -27,10 +28,7 @@ const UserManagement = ({ user }) => {
 
   useEffect(() => {
     if (isSuperAdmin) {
-      fetch('http://localhost:3000/api/users?role=admin', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      })
-        .then(res => res.json())
+      ApiService.get('/users?role=admin')
         .then(data => {
           setUsers(data.data || []);
           setLoading(false);
@@ -43,22 +41,14 @@ const UserManagement = ({ user }) => {
     e.preventDefault();
     setNotification(null);
     try {
-      const res = await fetch('http://localhost:3000/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          name: newAdmin.name,
-          email: newAdmin.email,
-          password: newAdmin.password,
-          accessLevel: 'admin',
-          role: 'admin',
-          rfIdTag: `ADMIN${Date.now()}`
-        })
+      const data = await ApiService.post('/users', {
+        name: newAdmin.name,
+        email: newAdmin.email,
+        password: newAdmin.password,
+        accessLevel: 'admin',
+        role: 'admin',
+        rfIdTag: `ADMIN${Date.now()}`
       });
-      const data = await res.json();
       if (data.success) {
         setNotification({ type: 'success', message: 'Admin created successfully.' });
         setShowCreateModal(false);
@@ -77,19 +67,11 @@ const UserManagement = ({ user }) => {
     e.preventDefault();
     setNotification(null);
     try {
-      const res = await fetch(`http://localhost:3000/api/users/${editAdmin._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          name: editAdmin.name,
-          email: editAdmin.email,
-          password: editAdmin.password || undefined,
-        })
+      const data = await ApiService.put(`/users/${editAdmin._id}`, {
+        name: editAdmin.name,
+        email: editAdmin.email,
+        password: editAdmin.password || undefined,
       });
-      const data = await res.json();
       if (data.success) {
         setNotification({ type: 'success', message: 'Admin updated successfully.' });
         setShowEditModal(false);
@@ -105,13 +87,7 @@ const UserManagement = ({ user }) => {
   const handleDeactivateAdmin = async () => {
     setNotification(null);
     try {
-      const res = await fetch(`http://localhost:3000/api/users/${deactivateAdmin._id}/deactivate`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await res.json();
+      const data = await ApiService.post(`/users/${deactivateAdmin._id}/deactivate`, {});
       if (data.success) {
         setNotification({ type: 'success', message: 'Admin deactivated.' });
         setShowDeactivateModal(false);

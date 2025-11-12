@@ -88,10 +88,7 @@ const AccessLogs = () => {
       return;
     }
     try {
-      const response = await fetch('http://localhost:3000/api/access-logs', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await response.json()
+      const data = await ApiService.get('/access-logs')
       
       if (data.success && data.data) {
         // Transform backend data to frontend format

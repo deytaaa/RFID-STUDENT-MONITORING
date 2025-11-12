@@ -200,6 +200,36 @@ const userController = {
       });
     }
   },
+
+  // DEACTIVATE USER (soft delete)
+  async deactivateUser(req, res) {
+    try {
+      const { id } = req.params;
+      const user = await User.findByIdAndUpdate(
+        id,
+        { isActive: false },
+        { new: true }
+      );
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found.",
+        });
+      }
+      res.status(200).json({
+        success: true,
+        message: "User deactivated successfully.",
+        data: user
+      });
+    } catch (error) {
+      console.error("Error deactivating user:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error in deactivating User",
+        error,
+      });
+    }
+  },
 };
 
 module.exports = userController;

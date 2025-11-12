@@ -107,19 +107,32 @@ const studentController = {
   async getStudentByRfid(req, res) {
     try {
       const { tag } = req.params;
-      const student = await User.findOne({ rfIdTag: tag });
+      
+      // Find user by RFID tag and ensure they are a student
+      const student = await User.findOne({ 
+        rfIdTag: tag.toUpperCase(), 
+        accessLevel: 'student',
+        isActive: true 
+      }).select('-password');
 
       if (!student) {
         return res.status(404).json({
           success: false,
-          message: "Student not found with this RFID tag",
+          message: "Student not found or card not registered",
         });
       }
 
-      res.status(200).json({ success: true, data: student });
+      res.status(200).json({
+        success: true,
+        data: student,
+      });
     } catch (error) {
       console.error("Error fetching student by RFID:", error);
-      res.status(500).json({ success: false, message: "Server Error" });
+      res.status(500).json({ 
+        success: false, 
+        message: "Server Error",
+        error: error.message 
+      });
     }
   },
 

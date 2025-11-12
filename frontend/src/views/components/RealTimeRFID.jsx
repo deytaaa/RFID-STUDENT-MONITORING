@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import WebSocketService from '../../services/WebSocketService'
+import ApiService from '../../services/ApiService.js'
 import { BsCpu, BsCheckCircle, BsSearch, BsBullseye, BsClipboardData, BsFileEarmarkText, BsRobot, BsXCircle } from "react-icons/bs";
 import { Tooltip } from 'react-tooltip';
 import './RealTimeRFID.css'
@@ -302,40 +303,36 @@ const RealTimeRFID = () => {
       const token = localStorage.getItem('token');
       if (!token) return; // Skip if not authenticated
       
-      const res = await fetch('http://localhost:3000/api/access-logs?limit=10', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const result = await res.json();
-        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
-          // Fetch student info for each activity
-          const activities = await Promise.all(result.data.map(async log => {
-            // Use rfidTag instead of cardID for database records
-            const cardID = log.rfidTag || log.cardID;
-            const student = cardID ? await fetchStudentByCardID(cardID) : null;
-            
-            // Handle unknown users properly
-            let displayStudent = student;
-            if (!student || student.name === 'Card not registered' || student.name === 'Unable to fetch card info') {
-              displayStudent = { name: 'Unknown User', profilePicture: '', cardID: cardID };
-            }
-            
-            return {
-              id: log._id || `${Date.now()}-${Math.random()}`,
-              cardID: cardID,
-              status: log.accessGranted ? 'granted' : 'denied',
-              timestamp: log.timestamp,
-              message: log.accessGranted ? 'Access Granted' : 'Access Denied',
-              student: displayStudent
-            };
-          }));
-          setRecentActivity(activities);
-        } else {
-          setRecentActivity([]);
-        }
+      const result = await ApiService.get('/access-logs?limit=10');
+      if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+        // Fetch student info for each activity
+        const activities = await Promise.all(result.data.map(async log => {
+          // Use rfidTag instead of cardID for database records
+          const cardID = log.rfidTag || log.cardID;
+          const student = cardID ? await fetchStudentByCardID(cardID) : null;
+          
+          // Handle unknown users properly
+          let displayStudent = student;
+          if (!student || student.name === 'Card not registered' || student.name === 'Unable to fetch card info') {
+            displayStudent = { name: 'Unknown User', profilePicture: '', cardID: cardID };
+          }
+          
+          return {
+            id: log._id || `${Date.now()}-${Math.random()}`,
+            cardID: cardID,
+            status: log.accessGranted ? 'granted' : 'denied',
+            timestamp: log.timestamp,
+            message: log.accessGranted ? 'Access Granted' : 'Access Denied',
+            student: displayStudent
+          };
+        }));
+        setRecentActivity(activities);
+      } else {
+        setRecentActivity([]);
       }
-    } catch {
+    } catch (error) {
       // Error intentionally ignored
+      console.log('Error fetching recent activity:', error);
     }
   }, []);
 
@@ -363,10 +360,7 @@ const RealTimeRFID = () => {
         return;
       }
       try {
-        const res = await fetch('http://localhost:3000/api/system/status', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const json = await res.json();
+        const json = await ApiService.get('/system/status');
         if (json.success && json.data && json.data.metrics) {
           setSystemMetrics(json.data.metrics);
         }
@@ -386,11 +380,10 @@ const RealTimeRFID = () => {
     // Only use the part before the colon
     const pureCardID = cardID.split(':')[0];
     try {
-      const res = await fetch(`http://localhost:3000/api/students/rfid/${pureCardID}`);
-      if (res.ok) {
-        const result = await res.json();
+      const result = await ApiService.get(`/students/rfid/${pureCardID}`);
+      if (result.data) {
         return result.data;
-      } else if (res.status === 404) {
+      } else {
         // Card not found, return a placeholder object
         return {
           name: 'Card not registered',

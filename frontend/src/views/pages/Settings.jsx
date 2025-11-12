@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Save, Wifi, Shield, Bell, Database, Clock, CheckCircle } from 'lucide-react'  
+import ApiService from '../../services/ApiService.js'
 import './Settings.css'
 
 const Settings = () => {
@@ -60,15 +61,8 @@ const Settings = () => {
     }
     try {
       console.log('Saving settings:', settings)
-      // Send settings to backend API
-      await fetch('http://localhost:3000/api/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(settings)
-      });
+      // Send settings to backend API using ApiService
+      await ApiService.put('/settings', settings);
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {

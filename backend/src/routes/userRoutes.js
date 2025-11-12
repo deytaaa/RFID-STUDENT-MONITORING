@@ -7,6 +7,7 @@ const { authenticateJWT, requireAdmin, requireSuperAdmin } = require('../middlew
 router.post('/', authenticateJWT, requireSuperAdmin, userController.createUser);
 router.put('/:id', authenticateJWT, requireSuperAdmin, userController.updateUser);
 router.delete('/:id', authenticateJWT, requireSuperAdmin, userController.deleteUser);
+router.post('/:id/deactivate', authenticateJWT, requireSuperAdmin, userController.deactivateUser);
 
 // Viewing operations: admin and super admin
 router.get('/', authenticateJWT, requireAdmin, userController.getAllUsers);

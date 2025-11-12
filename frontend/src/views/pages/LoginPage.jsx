@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ApiService from '../../services/ApiService.js';
 import './LoginPage.css';
 
 const LoginPage = ({ onLogin }) => {
@@ -12,14 +13,9 @@ const LoginPage = ({ onLogin }) => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await response.json();
+      const data = await ApiService.post('/auth/login', { email, password });
       console.log('Login response data:', data); // DEBUG LOG
-      if (response.ok && data.token) {
+      if (data.token) {
         localStorage.setItem('token', data.token);
         console.log('Saved token to localStorage:', data.token); // DEBUG LOG
         onLogin && onLogin({ user: data.user, token: data.token });
@@ -27,8 +23,9 @@ const LoginPage = ({ onLogin }) => {
         setError(data.message || 'Login failed');
       }
     } catch (error) {
-      setError('Network error');
-      console.log(error)
+      console.log('Login error:', error);
+      // Use the error message from the server (ApiService now parses it)
+      setError(error.message || 'Network error. Please check your connection.');
     }
     setLoading(false);
   };

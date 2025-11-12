@@ -11,6 +11,7 @@ import {
 import DashboardCard from "../components/DashboardCard";
 import AccessChart from "../components/AccessChart";
 import WebSocketService from "../../services/WebSocketService";
+import ApiService from "../../services/ApiService.js";
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -40,21 +41,8 @@ const Dashboard = () => {
       return;
     }
     try {
-      const logsResponse = await fetch(
-        "http://localhost:3000/api/access-logs",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const logs = await logsResponse.json();
-
-      const statusResponse = await fetch(
-        "http://localhost:3000/api/system/status",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const statusJson = await statusResponse.json();
+      const logs = await ApiService.get('/access-logs');
+      const statusJson = await ApiService.get('/system/status');
       let uptimeString = "N/A";
       if (statusJson.success && statusJson.data) {
         if (statusJson.data.metrics) {
@@ -245,16 +233,7 @@ const Dashboard = () => {
               style={gateStatus === 'opened' ? { background: '#16a34a', color: '#fff', cursor: 'not-allowed' } : {}}
               onClick={async () => {
                 try {
-                  const token = localStorage.getItem('token');
-                  const res = await fetch('http://localhost:3000/api/system/gate', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ action: 'open' })
-                  });
-                  const result = await res.json();
+                  const result = await ApiService.post('/system/gate', { action: 'open' });
                   if (result.success) {
                     setGateStatus('opened');
                   } else {
@@ -271,16 +250,7 @@ const Dashboard = () => {
               style={gateStatus === 'closed' ? { background: '#ef4444', color: '#fff', cursor: 'not-allowed' } : {}}
               onClick={async () => {
                 try {
-                  const token = localStorage.getItem('token');
-                  const res = await fetch('http://localhost:3000/api/system/gate', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ action: 'close' })
-                  });
-                  const result = await res.json();
+                  const result = await ApiService.post('/system/gate', { action: 'close' });
                   if (result.success) {
                     setGateStatus('closed');
                   } else {

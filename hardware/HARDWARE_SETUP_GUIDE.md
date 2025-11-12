@@ -14,14 +14,19 @@ MOSI          →    Pin 11
 SCK           →    Pin 13
 SDA/SS        →    Pin 10
 
-Exit RFID Module    →    Arduino UNO (use different pins)
+### Future Enhancement - Not Yet Implemented
+
+Exit RFID Module    →    Arduino UNO (Planned - Pin assignments need revision)
 VCC           →    3.3V
-RST           →    Pin 8
+RST           →    Pin 2   ← Changed to avoid LED conflict
 GND           →    GND
-MISO          →    Pin 6
-MOSI          →    Pin 5
-SCK           →    Pin 7
+MISO          →    Pin A0  ← Changed to avoid Servo conflict
+MOSI          →    Pin A1  ← Changed to avoid Buzzer conflict
+SCK           →    Pin A2  ← Changed to avoid LED conflict
 SDA/SS        →    Pin 4
+
+NOTE: Current implementation uses Pins 7 & 8 for LEDs, so exit RFID
+      requires different pins to avoid conflicts.
 ```
 
 ### Servo Motor (Gate Mechanism)
@@ -33,7 +38,7 @@ Brown (GND)   →    GND
 Orange (PWM)  →    Pin 6
 ```
 
-### LCD Display (16x2 with I2C)
+### LCD Display (16x2 with I2C) optional!! im not using this
 
 ```
 LCD I2C       →    Arduino UNO
@@ -59,7 +64,38 @@ Positive      →    Pin 5
 Negative      →    GND
 ```
 
-### Ultrasonic Sensor HC-SR04
+## 📊 Current Working Pin Assignments
+
+### ✅ Physical Implementation (Tested & Working):
+
+```
+Arduino UNO Pin Usage:
+├── Pin 5:  Piezo Buzzer
+├── Pin 6:  Servo Motor PWM
+├── Pin 7:  Green LED (Access Granted)
+├── Pin 8:  Red LED (Access Denied)
+├── Pin 9:  Entry RFID RST
+├── Pin 10: Entry RFID SS
+├── Pin 11: Entry RFID MOSI (SPI)
+├── Pin 12: Entry RFID MISO (SPI)
+├── Pin 13: Entry RFID SCK (SPI)
+├── 3.3V:   RFID Module Power
+├── 5V:     Servo Motor Power
+└── GND:    Common Ground
+```
+
+### 🔄 Database Configuration Update Needed:
+
+Your MongoDB device document should reflect actual pins:
+
+```javascript
+"ledPins": {
+  "green": 7,  // Actual physical pin
+  "red": 8     // Actual physical pin
+}
+```
+
+### ~~Ultrasonic Sensor HC-SR04~~ // REMOVED - Not used in final design
 
 ```
 HC-SR04       →    Arduino UNO
@@ -68,7 +104,6 @@ GND           →    GND
 Trig          →    Pin 4
 Echo          →    Pin 3
 ```
-
 
 ## 📋 Required Arduino Libraries
 

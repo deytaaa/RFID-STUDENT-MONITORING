@@ -83,10 +83,7 @@ const ExitLogs = () => {
       return;
     }
     try {
-      const response = await fetch('http://localhost:3000/api/access-logs/exit', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await response.json()
+      const data = await ApiService.get('/access-logs/exit')
       console.log('📊 Exit logs API response:', data);
       
       if (data.success && data.data && data.data.length > 0) {
