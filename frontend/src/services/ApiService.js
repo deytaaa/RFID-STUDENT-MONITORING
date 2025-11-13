@@ -41,15 +41,25 @@ class ApiService {
       if (!response.ok) {
         // Try to get error message from response body
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        let errorData = null;
+        
         if (contentType && contentType.includes('application/json')) {
           try {
-            const errorData = await response.json();
+            errorData = await response.json();
             errorMessage = errorData.message || errorMessage;
           } catch {
             // If JSON parsing fails, use default error message
           }
         }
-        throw new Error(errorMessage);
+        
+        // Create a custom error with response data for specific cases
+        const error = new Error(errorMessage);
+        error.response = {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData
+        };
+        throw error;
       }
       
       if (contentType && contentType.includes('application/json')) {

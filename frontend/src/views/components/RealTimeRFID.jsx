@@ -17,13 +17,13 @@ const RealTimeRFID = () => {
   })
 
   const [recentActivity, setRecentActivity] = useState([])
-  const [systemLogs, setSystemLogs] = useState([])
+
   const [scannedStudent, setScannedStudent] = useState(null);
   const [accessStudent, setAccessStudent] = useState(null);
   const [systemMetrics, setSystemMetrics] = useState({ rfidReader: 'connected', database: 'connected', network: 'strong' });
   
   // Track last event times to prevent rapid duplicates
-  const lastEventTimes = useRef(new Map())
+
   const location = useLocation();
 
   useEffect(() => {
@@ -91,13 +91,7 @@ const RealTimeRFID = () => {
           isConnected: true
         }))
       }
-      const log = {
-        id: `${Date.now()}-${Math.random()}`,
-        message: '🟢 RFID System Online',
-        type: 'success',
-        timestamp: new Date()
-      }
-      setSystemLogs(prev => [log, ...prev.slice(0, 19)])
+
     }
 
     const handleCardScanned = async (data) => {
@@ -110,45 +104,57 @@ const RealTimeRFID = () => {
         }
       }))
       
-      const log = {
-        id: `${Date.now()}-${Math.random()}`,
-        message: `🔍 Card Scanned: ${data.cardID}`,
-        type: 'info',
-        timestamp: new Date()
-      }
-      setSystemLogs(prev => [log, ...prev.slice(0, 19)])
-
       // Fetch student info by card ID
       const student = await fetchStudentByCardID(data.cardID);
       setScannedStudent(student);
+      
+      // Immediately update Last Access section with provisional status
+      const provisionalStatus = student?.status === 'inactive' ? 'denied' : 
+                               (student?.name === 'Card not registered' || student?.status === 'unauthorized' ? 'denied' : 'granted');
+      
+      setRfidStatus(prev => ({
+        ...prev,
+        lastAccess: {
+          cardID: data.cardID,
+          status: provisionalStatus,
+          timestamp: new Date(data.receivedAt || new Date()),
+          provisional: true
+        },
+        gateStatus: provisionalStatus === 'granted' ? 'open' : 'closed'
+      }));
+      
+      // Set the access student immediately
+      setAccessStudent(student);
+      
+      // Don't add to Recent Activity immediately - wait for the definitive access granted/denied event
+      // This prevents duplicate entries
+      console.log('🔍 Card scanned - waiting for access decision...');
     }
 
     const handleAccessGranted = async (data) => {
       console.log('✅ Access Granted:', JSON.stringify(data))
       
-      // Prevent duplicate entries using ref to track timing
-      const eventKey = `${data.cardID}-granted`
-      const now = Date.now()
-      const lastEventTime = lastEventTimes.current.get(eventKey) || 0
-      
-      // If the same event occurred less than 2 seconds ago, ignore it
-      if (now - lastEventTime < 2000) {
-        console.log('🚫 Duplicate ACCESS_GRANTED event ignored')
-        return
-      }
-      
-      lastEventTimes.current.set(eventKey, now)
-      
       const student = await fetchStudentByCardID(data.cardID);
       setRecentActivity(prev => {
+        let displayStudent = student;
+        
+        // For access granted, we should always have valid student info
+        // But just in case, handle edge cases
+        if (!student || student.status === 'unauthorized' || student.status === 'error' || 
+            student.name === 'Card not registered' || student.name === 'Unable to fetch card info') {
+          displayStudent = { name: 'Unknown User', profilePicture: '', cardID: data.cardID };
+        }
+        
         const activity = {
           id: `${Date.now()}-${Math.random()}`,
           cardID: data.cardID,
           status: 'granted',
           timestamp: new Date(),
-          message: 'Access Granted - Automatic gate opening authorized',
-          student: student && student.name && student.name !== 'Card not registered' && student.name !== 'Unable to fetch card info' ? student : { name: 'Unknown User', profilePicture: '', cardID: data.cardID }
+          message: 'Access Granted - Entry Confirmed',
+          student: displayStudent
         }
+        
+        // Simply add the new activity to the top of the list
         return [activity, ...prev.slice(0, 9)]
       })
       
@@ -157,49 +163,45 @@ const RealTimeRFID = () => {
         lastAccess: {
           cardID: data.cardID,
           status: 'granted',
-          timestamp: new Date(data.receivedAt || new Date())
+          timestamp: new Date(data.receivedAt || new Date()),
+          provisional: false // Mark as confirmed
         },
         gateStatus: 'open'
       }))
       
-      const log = {
-        id: `${Date.now()}-${Math.random()}`,
-        message: `✅ ACCESS GRANTED: ${data.cardID}`,
-        type: 'success',
-        timestamp: new Date()
-      }
-      setSystemLogs(prev => [log, ...prev.slice(0, 19)])
-
       setAccessStudent(student);
-      await fetchRecentActivity();
     }
 
     const handleAccessDenied = async (data) => {
       console.log('🚫 Access Denied:', JSON.stringify(data))
       
-      // Prevent duplicate entries using ref to track timing
-      const eventKey = `${data.cardID}-denied`
-      const now = Date.now()
-      const lastEventTime = lastEventTimes.current.get(eventKey) || 0
-      
-      // If the same event occurred less than 2 seconds ago, ignore it
-      if (now - lastEventTime < 2000) {
-        console.log('🚫 Duplicate ACCESS_DENIED event ignored')
-        return
-      }
-      
-      lastEventTimes.current.set(eventKey, now)
-      
       const student = await fetchStudentByCardID(data.cardID);
       setRecentActivity(prev => {
+        let message = 'Access Denied';
+        let displayStudent = student;
+        
+        if (student?.status === 'inactive') {
+          message = 'Access Denied - Not Active';
+          // For inactive cards, we have the student info, so use it
+          // Make sure to display the actual student name
+        } else if (student?.status === 'unauthorized' || student?.name === 'Card not registered') {
+          message = 'Access Denied - Card Not Registered';
+          displayStudent = { name: 'Unknown User', profilePicture: '', cardID: data.cardID };
+        } else if (student?.status === 'error' || student?.name === 'Unable to fetch card info') {
+          message = 'Access Denied - Unable to Verify Card';
+          displayStudent = { name: 'Unknown User', profilePicture: '', cardID: data.cardID };
+        }
+        
         const activity = {
           id: `${Date.now()}-${Math.random()}`,
           cardID: data.cardID,
           status: 'denied',
           timestamp: new Date(),
-          message: 'Access Denied - Not Active',
-          student: !student || student.name === 'Card not registered' || student.name === 'Unable to fetch card info' ? { name: 'Unknown User', profilePicture: '', cardID: data.cardID } : student
+          message: message,
+          student: displayStudent
         }
+        
+        // Simply add the new activity to the top of the list
         return [activity, ...prev.slice(0, 9)]
       })
       
@@ -208,20 +210,12 @@ const RealTimeRFID = () => {
         lastAccess: {
           cardID: data.cardID,
           status: 'denied',
-          timestamp: new Date(data.receivedAt || new Date())
+          timestamp: new Date(data.receivedAt || new Date()),
+          provisional: false // Mark as confirmed
         }
       }))
-      
-      const log = {
-        id: `${Date.now()}-${Math.random()}`,
-        message: `🚫 ACCESS DENIED: ${data.cardID}`,
-        type: 'error',
-        timestamp: new Date()
-      }
-      setSystemLogs(prev => [log, ...prev.slice(0, 19)])
 
       setAccessStudent(student);
-      await fetchRecentActivity();
     }
 
     const handleGateClosed = (data) => {
@@ -230,24 +224,18 @@ const RealTimeRFID = () => {
         ...prev,
         gateStatus: 'closed'
       }))
-      
-      const log = {
-        id: `${Date.now()}-${Math.random()}`,
-        message: '🔒 Gate closed - System ready',
-        type: 'info',
-        timestamp: new Date()
-      }
-      setSystemLogs(prev => [log, ...prev.slice(0, 19)])
     }
 
-    const handleArduinoLog = (data) => {
-      const log = {
-        id: `${Date.now()}-${Math.random()}`,
-        message: `🤖 ${data.message}`,
-        type: 'log',
-        timestamp: new Date()
-      }
-      setSystemLogs(prev => [log, ...prev.slice(0, 19)])
+    const handleGateOpen = (data) => {
+      console.log('🚪 Gate Opened:', JSON.stringify(data))
+      setRfidStatus(prev => ({
+        ...prev,
+        gateStatus: 'open'
+      }))
+    }
+
+    const handleArduinoLog = () => {
+      // Arduino log handling removed since System Logs section was removed
     }
 
     const handleConnected = () => {
@@ -264,13 +252,45 @@ const RealTimeRFID = () => {
         isConnected: false,
         systemReady: false // Reset systemReady on disconnect
       }))
-      const log = {
-        id: `${Date.now()}-${Math.random()}`,
-        message: '🔴 Disconnected from backend',
-        type: 'error',
-        timestamp: new Date()
+
+    }
+
+    const handleStudentTap = async (tapEvent) => {
+      console.log('📡 Frontend received Student Tap Event:', JSON.stringify(tapEvent))
+      
+      // Handle both entrance and exit activities from API/Postman
+      const isExit = tapEvent.status === 'exited' || (tapEvent.location && tapEvent.location.toLowerCase().includes('exit'));
+      
+      // Fetch full student details if we have a card ID
+      let student = null;
+      if (tapEvent.rfid && tapEvent.rfid !== 'Unknown') {
+        try {
+          student = await fetchStudentByCardID(tapEvent.rfid);
+          console.log('📡 Fetched student for studentTap:', student);
+        } catch (error) {
+          console.error('Error fetching student for studentTap:', error);
+        }
       }
-      setSystemLogs(prev => [log, ...prev.slice(0, 19)])
+      
+      // Use fetched student data or fallback to event data
+      const displayStudent = student || {
+        name: tapEvent.user || 'Unknown User',
+        course: tapEvent.course || 'Unknown Course',
+        profilePicture: ''
+      };
+      
+      // Add to recent activity with proper student data
+      const activity = {
+        id: tapEvent.id || `${Date.now()}-${Math.random()}`,
+        cardID: tapEvent.rfid || 'Unknown',
+        status: tapEvent.status === 'exited' ? 'exited' : (tapEvent.status === 'entered' ? 'granted' : tapEvent.status),
+        timestamp: new Date(tapEvent.timestamp || new Date()),
+        message: isExit ? 'Access Granted - Exit Confirmed' : 'Access Granted - Entry Confirmed',
+        location: tapEvent.location || 'Unknown Location',
+        student: displayStudent
+      };
+      
+      setRecentActivity(prev => [activity, ...prev.slice(0, 9)]);
     }
 
     // Attach event listeners
@@ -279,7 +299,9 @@ const RealTimeRFID = () => {
     WebSocketService.on('arduino-access-granted', handleAccessGranted)
     WebSocketService.on('arduino-access-denied', handleAccessDenied)
     WebSocketService.on('arduino-gate-closed', handleGateClosed)
+    WebSocketService.on('arduino-gate-open', handleGateOpen)
     WebSocketService.on('arduino-log', handleArduinoLog)
+    WebSocketService.on('studentTap', handleStudentTap) // Handle API-created access logs
     WebSocketService.on('connected', handleConnected)
     WebSocketService.on('disconnected', handleDisconnected)
 
@@ -291,11 +313,13 @@ const RealTimeRFID = () => {
       WebSocketService.off('arduino-access-granted', handleAccessGranted)
       WebSocketService.off('arduino-access-denied', handleAccessDenied)
       WebSocketService.off('arduino-gate-closed', handleGateClosed)
+      WebSocketService.off('arduino-gate-open', handleGateOpen)
       WebSocketService.off('arduino-log', handleArduinoLog)
+      WebSocketService.off('studentTap', handleStudentTap)
       WebSocketService.off('connected', handleConnected)
       WebSocketService.off('disconnected', handleDisconnected)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // Move fetchRecentActivity outside useEffect so it can be called from anywhere
   const fetchRecentActivity = React.useCallback(async () => {
@@ -311,18 +335,40 @@ const RealTimeRFID = () => {
           const cardID = log.rfidTag || log.cardID;
           const student = cardID ? await fetchStudentByCardID(cardID) : null;
           
-          // Handle unknown users properly
+          // Handle different student statuses properly
           let displayStudent = student;
-          if (!student || student.name === 'Card not registered' || student.name === 'Unable to fetch card info') {
-            displayStudent = { name: 'Unknown User', profilePicture: '', cardID: cardID };
+          let message = log.accessGranted ? 'Access Granted' : 'Access Denied';
+          
+          if (!log.accessGranted) {
+            // For denied access, provide more specific messaging
+            if (student?.status === 'inactive') {
+              message = 'Access Denied - Not Active';
+              // Keep the student info for inactive cards
+            } else if (!student || student.status === 'unauthorized' || student.name === 'Card not registered') {
+              message = 'Access Denied - Card Not Registered';
+              displayStudent = { name: 'Unknown User', profilePicture: '', cardID: cardID };
+            } else if (student.status === 'error' || student.name === 'Unable to fetch card info') {
+              message = 'Access Denied - Unable to Verify Card';
+              displayStudent = { name: 'Unknown User', profilePicture: '', cardID: cardID };
+            }
+          } else {
+            // For granted access, fallback to unknown user if no valid student info
+            if (!student || student.status === 'unauthorized' || student.status === 'error' || 
+                student.name === 'Card not registered' || student.name === 'Unable to fetch card info') {
+              displayStudent = { name: 'Unknown User', profilePicture: '', cardID: cardID };
+            }
           }
+          
+          // Determine if this is an exit activity based on the log message or location
+          const isExitActivity = log.message && log.message.toLowerCase().includes('exit');
           
           return {
             id: log._id || `${Date.now()}-${Math.random()}`,
             cardID: cardID,
-            status: log.accessGranted ? 'granted' : 'denied',
+            status: log.accessGranted ? (isExitActivity ? 'exited' : 'granted') : 'denied',
             timestamp: log.timestamp,
-            message: log.accessGranted ? 'Access Granted' : 'Access Denied',
+            message: message,
+            location: log.location,
             student: displayStudent
           };
         }));
@@ -355,7 +401,6 @@ const RealTimeRFID = () => {
       if (!token) {
         setSystemMetrics((prev) => ({ ...prev, rfidReader: 'disconnected' }));
         setRecentActivity([]);
-        setSystemLogs([]);
         // Optionally, show a notification or redirect to login
         return;
       }
@@ -376,31 +421,76 @@ const RealTimeRFID = () => {
 
   // Fetch recent activity with token check
 
+  // Add caching for student data to prevent repeated API calls
+  const studentCache = useRef(new Map());
+  
   const fetchStudentByCardID = async (cardID) => {
     // Only use the part before the colon
     const pureCardID = cardID.split(':')[0];
+    
+    // Check cache first
+    if (studentCache.current.has(pureCardID)) {
+      console.log('🚀 Using cached student data for:', pureCardID);
+      return studentCache.current.get(pureCardID);
+    }
+    
     try {
       const result = await ApiService.get(`/students/rfid/${pureCardID}`);
-      if (result.data) {
+      if (result.success && result.data) {
+        // Cache the result
+        studentCache.current.set(pureCardID, result.data);
         return result.data;
       } else {
-        // Card not found, return a placeholder object
-        return {
+        const fallback = {
           name: 'Card not registered',
           profilePicture: '',
           cardID,
           status: 'unauthorized'
         };
+        studentCache.current.set(pureCardID, fallback);
+        return fallback;
       }
     } catch (err) {
       console.log('Error fetching student by card ID:', err);
-      // Network or other error, return a placeholder object
-      return {
-        name: 'Unable to fetch card info',
-        profilePicture: '',
-        cardID,
-        status: 'error'
-      };
+      console.log('Error response status:', err.response?.status);
+      console.log('Error response data:', err.response?.data);
+      console.log('Full error object:', err);
+      
+      let studentData;
+      // Check the response status to distinguish between different error types
+      if (err.response?.status === 404) {
+        studentData = {
+          name: 'Card not registered',
+          profilePicture: '',
+          cardID,
+          status: 'unauthorized'
+        };
+      } else if (err.response?.status === 403) {
+        // Card is registered but inactive (CARD_INACTIVE)
+        const responseData = err.response?.data?.data;
+        studentData = {
+          name: responseData?.name || 'Inactive User',
+          profilePicture: responseData?.profilePicture || '',
+          email: responseData?.email,
+          studentId: responseData?.studentId,
+          course: responseData?.course,
+          yearLevel: responseData?.yearLevel,
+          cardID,
+          status: 'inactive',
+          isActive: false
+        };
+      } else {
+        studentData = {
+          name: 'Unable to fetch card info',
+          profilePicture: '',
+          cardID,
+          status: 'error'
+        };
+      }
+      
+      // Cache the error result to prevent repeated failed requests
+      studentCache.current.set(pureCardID, studentData);
+      return studentData;
     }
   }
 
@@ -419,23 +509,7 @@ const RealTimeRFID = () => {
     });
   }
 
-  // Helper to render log message with icons
-  const renderLogMessage = (msg) => {
-  const style = {
-    fontFamily: 'Arial, sans-serif',
-    fontSize: '1.1rem',
-    verticalAlign: 'middle',
-    display: 'inline-flex',
-    alignItems: 'center',
-  };
-  if (msg.includes('🟢')) return <span style={style}><BsCheckCircle style={{color:'#10b981', marginRight:6}} /> {msg.replace('🟢','')}</span>;
-  if (msg.includes('🤖')) return <span style={style}><BsRobot style={{marginRight:6}} /> {msg.replace('🤖','')}</span>;
-  if (msg.includes('🔍')) return <span style={style}><BsSearch style={{marginRight:6}} /> {msg.replace('🔍','')}</span>;
-  if (msg.includes('🚫') || msg.includes('❌')) return <span style={style}><BsXCircle style={{color:'#ef4444', marginRight:6}} /> {msg.replace('🚫','').replace('❌','')}</span>;
-  if (msg.includes('📜')) return <span style={style}><BsFileEarmarkText style={{marginRight:6}} /> {msg.replace('📜','')}</span>;
-  if (msg.includes('🎯')) return <span style={style}><BsBullseye style={{marginRight:6}} /> {msg.replace('🎯','')}</span>;
-  return <span style={style}>{msg}</span>;
-};
+
 
   // Helper to transform recentActivity data for RecentActivity component
   const recentActivityData = recentActivity.map(item => ({
@@ -444,6 +518,9 @@ const RealTimeRFID = () => {
     rfid: item.cardID || '',
     status: item.status || 'unknown',
     profilePicture: item.student?.profilePicture || '',
+    student: item.student, // Pass the full student object so RecentActivity can check status
+    message: item.message || '', // Pass the message to detect exit activities
+    location: item.location || '', // Pass the location to detect exit activities
     // You can add more fields if needed, e.g. email, department, etc.
     // email: item.student?.email,
     // department: item.student?.department
@@ -478,53 +555,24 @@ const RealTimeRFID = () => {
       <div className="rfid-grid">
         {/* Current Status Cards */}
         <div className="status-cards">
-          <div className="status-card system">
-            <h3><BsCpu size={28} style={{marginRight: 12}} /> System Status</h3>
-            <div className="status-content">
-              <div className={`status-badge ${systemMetrics.rfidReader === 'connected' ? 'ready' : 'not-ready'}`}
-                title={systemMetrics.rfidReader === 'connected' ? 'System is ready' : 'System is offline'}>
-                {systemMetrics.rfidReader === 'connected' ? <><BsCheckCircle size={24} style={{color: '#10b981', marginRight: 8}} /> Ready</> : '🔴 Offline'}
-              </div>
-            </div>
-          </div>
-
-          <div className="status-card scan">
-            <h3><BsSearch size={24} style={{marginRight: 12}} /> Last Card Scan</h3>
-            <div className="status-content">
-              {rfidStatus.lastCardScanned ? (
-                scannedStudent ? (
-                  <div className="student-scan-info">
-                    <img
-                      src={scannedStudent && (!scannedStudent.profilePicture || scannedStudent.name === 'Unknown Card' || scannedStudent.name === 'Unauthorized User')
-                        ? 'https://cdn-icons-png.flaticon.com/512/149/149071.png'
-                        : scannedStudent.profilePicture?.startsWith('/uploads/profile-pictures/')
-                          ? `http://localhost:3000${scannedStudent.profilePicture}`
-                          : scannedStudent.profilePicture?.startsWith('http')
-                            ? scannedStudent.profilePicture
-                            : scannedStudent.profilePicture
-                      }
-                      alt="Profile"
-                      className="profile-picture"
-                      style={{ background: scannedStudent && (scannedStudent.name === 'Unknown Card' || scannedStudent.name === 'Unauthorized User') ? '#f3f4f6' : undefined }}
-                    />
-                    <span className="student-name" style={{fontSize: '1.2rem', fontWeight: 600}}>
-                      {scannedStudent.name === 'Unknown Card' ? 'Card not registered' : scannedStudent.name === 'Unauthorized User' ? 'Unauthorized card tapped' : scannedStudent.name}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="card-id">{rfidStatus.lastCardScanned.cardID}</div>
-                )
-              ) : (
-                <div className="no-data">No cards scanned yet</div>
-              )}
-              {rfidStatus.lastCardScanned && (
-                <div className="timestamp">{formatTime(rfidStatus.lastCardScanned.timestamp)}</div>
-              )}
-            </div>
-          </div>
-
-          <div className="status-card access">
-            <h3><BsBullseye size={24} style={{marginRight: 12}} /> Last Access</h3>
+          <div className="status-card access" style={{ 
+            gridColumn: '1 / -1', 
+            width: '100%',
+            background: 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)',
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1), 0 4px 16px rgba(0, 0, 0, 0.05)',
+            border: '1px solid rgba(229, 231, 235, 0.8)',
+            transition: 'all 0.3s ease',
+            padding: '32px'
+          }}>
+            <h3 style={{
+              fontSize: '1.4rem',
+              fontWeight: 700,
+              color: '#374151',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              letterSpacing: '0.5px'
+            }}><BsBullseye size={28} style={{marginRight: 16, color: '#059669'}} /> Recent Access</h3>
             <div className="status-content">
               {rfidStatus.lastAccess ? (
                 accessStudent ? (
@@ -541,9 +589,26 @@ const RealTimeRFID = () => {
                       }
                       alt="Profile"
                       className="profile-picture"
-                      style={{ background: accessStudent && (accessStudent.name === 'Unknown Card' || accessStudent.name === 'Unauthorized User') ? '#f3f4f6' : undefined }}
+                      style={{ 
+                        background: accessStudent && (accessStudent.name === 'Unknown Card' || accessStudent.name === 'Unauthorized User') ? '#f3f4f6' : undefined,
+                        width: '350px',
+                        height: '350px',
+                        borderRadius: '16px',
+                        objectFit: 'cover',
+                        border: '4px solid #ffffff',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1)',
+                        transition: 'all 0.3s ease'
+                      }}
                     />
-                    <span className="student-name" style={{fontSize: '1.2rem', fontWeight: 600}}>{accessStudent.name}</span>
+                    <span className="student-name" style={{
+                      fontSize: '1.5rem', 
+                      fontWeight: 700, 
+                      color: '#1f2937',
+                      textAlign: 'center',
+                      display: 'block',
+                      marginTop: '16px',
+                      letterSpacing: '0.5px'
+                    }}>{accessStudent.name}</span>
                   </div>
                   <div className={`access-result ${rfidStatus.lastAccess.status}`}>
                     {rfidStatus.lastAccess.status === 'entered' && <><BsCheckCircle /> Entered</>}
@@ -554,13 +619,38 @@ const RealTimeRFID = () => {
                 </>
                 ) : (
                   <>
-                    <div className="card-id">{rfidStatus.lastAccess.cardID}</div>
-                    <div className={`access-result ${rfidStatus.lastAccess.status}`}>
-                      {rfidStatus.lastAccess.status === 'entered' && <><BsCheckCircle /> Entered</>}
-                      {rfidStatus.lastAccess.status === 'denied' && <><BsXCircle /> Denied</>}
-                      {rfidStatus.lastAccess.status === 'granted' && <><BsCheckCircle /> Granted</>}
-                    </div>
-                    <div className="timestamp">{formatTime(rfidStatus.lastAccess.timestamp)}</div>
+                    <div className="card-id">{rfidStatus.lastAccess.cardID}</div>                  <div className={`access-result ${rfidStatus.lastAccess.status}`} style={{
+                    background: rfidStatus.lastAccess.status === 'granted' 
+                      ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+                      : rfidStatus.lastAccess.status === 'denied'
+                      ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                      : 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
+                    color: 'white',
+                    padding: '12px 24px',
+                    borderRadius: '12px',
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    marginTop: '16px',
+                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px'
+                  }}>
+                    {rfidStatus.lastAccess.status === 'entered' && <><BsCheckCircle size={20} /> Entered</>}
+                    {rfidStatus.lastAccess.status === 'denied' && <><BsXCircle size={20} /> Denied</>}
+                    {rfidStatus.lastAccess.status === 'granted' && <><BsCheckCircle size={20} /> Access Granted</>}
+                  </div>
+                  <div className="timestamp" style={{
+                    fontSize: '0.95rem',
+                    color: '#6b7280',
+                    textAlign: 'right',
+                    marginTop: '12px',
+                    fontWeight: 500,
+                    letterSpacing: '0.5px'
+                  }}>{formatTime(rfidStatus.lastAccess.timestamp)}</div>
                   </>
                 )
               ) : (
@@ -568,25 +658,13 @@ const RealTimeRFID = () => {
               )}
             </div>
           </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="activity-section">
-          <h3><BsClipboardData size={24} style={{marginRight: 12}} /> Recent Activity</h3>
-          <RecentActivity data={recentActivityData} />
-        </div>
-
-        {/* System Logs */}
-        <div className="logs-section">
-          <h3><BsFileEarmarkText size={24} style={{marginRight: 12}} /> System Logs</h3>
-          <div className="logs-list">
-            {systemLogs.map((log) => (
-              <div key={log.id} className={`log-item ${log.type}`}
-                title={log.type.charAt(0).toUpperCase() + log.type.slice(1)}>
-                <span className="log-time">{formatTime(log.timestamp)}</span>
-                <span className="log-message">{renderLogMessage(log.message)}</span>
-              </div>
-            ))}
+          
+          {/* Recent Activity */}
+          <div className="status-card activity" style={{ gridColumn: '1 / -1', width: '100%' }}>
+            <h3><BsClipboardData size={24} style={{marginRight: 12}} /> Recent Activity</h3>
+            <div className="status-content">
+              <RecentActivity data={recentActivityData} />
+            </div>
           </div>
         </div>
       </div>

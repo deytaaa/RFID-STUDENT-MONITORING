@@ -155,7 +155,7 @@ const accessLogController = {
 
       res.status(201).json({
         success: true,
-        message: `Access ${accessGranted ? "entered" : "denied"}`,
+        message: `Access ${accessGranted ? (direction === 'exit' ? 'exited' : 'entered') : 'denied'}`,
         data: newLog,
         accessGranted, // Quick access for RFID reader
       });

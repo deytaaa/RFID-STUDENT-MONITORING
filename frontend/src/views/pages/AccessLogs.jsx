@@ -97,13 +97,14 @@ const AccessLogs = () => {
           timestamp: new Date(log.timestamp).toLocaleString(),
           user: log.userId?.name || log.userId?.email || 'Unknown User',
           rfid: log.userId?.rfidTag || log.rfidTag || 'Unknown',
-          status: log.status,
-          location: log.deviceId?.location || 'Unknown Location'
+          status: log.accessGranted === true ? 'entered' : 'denied', // Map based on accessGranted field
+          location: log.location || log.deviceId?.location || 'Unknown Location',
+          direction: log.direction
         }))
         
-        // Show both successful entries AND denied attempts
+        // Only show entry logs (direction: 'entry') and exclude exit logs
         const accessLogs = transformedLogs.filter(log => 
-          log.status === 'entered' || log.status === 'denied'
+          !log.direction || log.direction === 'entry'
         )
         setLogs(accessLogs)
         setFilteredLogs(accessLogs)

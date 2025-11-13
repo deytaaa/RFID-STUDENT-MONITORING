@@ -149,7 +149,11 @@ class ArduinoSerialService {
     const now = Date.now();
     const lastTime = this.lastScanTime.get(formattedID) || 0;
 
-    if (now - lastTime < this.cooldownMs) return;
+    // Increased cooldown to prevent duplicates
+    if (now - lastTime < this.cooldownMs) {
+      console.log(`⏱️ Card ${formattedID} still in cooldown, ignoring...`);
+      return;
+    }
     this.lastScanTime.set(formattedID, now);
 
     let status = 'denied';
@@ -179,7 +183,7 @@ class ArduinoSerialService {
         await this.createNotificationForAllAdmins({
           type: 'access_denied',
           title: 'Access Denied',
-          message: `Unauthorized access attempt with card ****${formattedID.slice(-3)}`,
+          message: `Unauthorized access attempt with card ${formattedID}`,
           data: {
             cardID: formattedID,
             deviceId: device?._id?.toString(),
@@ -198,7 +202,7 @@ class ArduinoSerialService {
         await this.createNotificationForAllAdmins({
           type: 'access_granted',
           title: 'Access Granted',
-          message: `${user.name} entered via card ****${formattedID.slice(-3)}`,
+          message: `${user.name} entered via card ${formattedID}`,
           data: {
             cardID: formattedID,
             studentId: user._id?.toString(),
@@ -211,18 +215,11 @@ class ArduinoSerialService {
         });
       }
 
-      // Emit event to React dashboard
-      this.io.emit('studentTap', {
-        id: formattedID,
-        user: (user && user.name) ? user.name : 'Unknown User',
-        rfid: `****${formattedID.slice(-3)}`,
-        timestamp: new Date().toISOString(),
-        status,
-        location: device?.location || 'Main Gate'
-      });
+      // Note: Removed studentTap event emission to prevent duplicate entries in Recent Activity
+      // The specific arduino-access-granted/denied events handle the Recent Activity updates
 
-      // Optional: Log to MongoDB (needs auth token if backend requires)
-      await this.logAccess(device, formattedID, status, status === 'granted' ? 'Valid' : 'Denied', user);
+      // Log to MongoDB - this is the definitive access log
+      await this.logAccess(device, formattedID, status, status === 'entered' ? 'Valid' : 'Denied', user);
     } catch (err) {
       console.error('❌ Error handling card scan:', err.message);
     }
@@ -235,8 +232,8 @@ class ArduinoSerialService {
     console.log(`✅ Access granted event: ${data.cardID}`);
     
     // Emit WebSocket event for frontend notifications
-    this.io.emit('access-granted', {
-      message: `Access granted for card ****${data.cardID.slice(-3)}`,
+    this.io.emit('arduino-access-granted', {
+      message: `Access granted for card ${data.cardID}`,
       cardID: data.cardID,
       timestamp: new Date().toISOString()
     });
@@ -245,21 +242,32 @@ class ArduinoSerialService {
   async handleAccessDenied(data) { 
     console.log(`🚫 Access denied event: ${data.cardID}`);
     
+    // Check cooldown to prevent duplicate events
+    const formattedID = data.cardID.trim().toUpperCase();
+    const now = Date.now();
+    const lastTime = this.lastScanTime.get(`denied_${formattedID}`) || 0;
+    
+    if (now - lastTime < this.cooldownMs) {
+      console.log(`⏱️ Access denied event for ${formattedID} still in cooldown, ignoring...`);
+      return;
+    }
+    this.lastScanTime.set(`denied_${formattedID}`, now);
+    
     // Emit WebSocket event for frontend notifications
     const notificationData = {
-      message: `Access denied for card ****${data.cardID.slice(-3)}`,
+      message: `Access denied for card ${data.cardID}`,
       cardID: data.cardID,
       timestamp: new Date().toISOString()
     };
     
     console.log('📡 Emitting access-denied WebSocket event:', notificationData);
-    this.io.emit('access-denied', notificationData);
+    this.io.emit('arduino-access-denied', notificationData);
     console.log('✅ WebSocket event emitted successfully');
   }
 
   handleGateClosed(data) {
     console.log('🔒 Gate closed - ready');
-    this.io.emit('gate_status', {
+    this.io.emit('arduino-gate-closed', {
       status: 'closed',
       message: 'Gate closed, ready for next card',
       timestamp: new Date().toISOString()
@@ -268,7 +276,7 @@ class ArduinoSerialService {
 
   handleGateOpen(data) {
     console.log('🚪 Gate opened event received:', data);
-    this.io.emit('gate_status', {
+    this.io.emit('arduino-gate-open', {
       status: 'open',
       message: 'Gate opened by backend or RFID',
       timestamp: new Date().toISOString()
@@ -310,6 +318,19 @@ class ArduinoSerialService {
   // Save access log to MongoDB
   async logAccess(device, cardID, status, reason, user) {
     try {
+      // Check for recent duplicate logs (within last 5 seconds)
+      const fiveSecondsAgo = new Date(Date.now() - 5000);
+      const existingLog = await AccessLog.findOne({
+        rfidTag: cardID,
+        deviceId: device?._id,
+        timestamp: { $gte: fiveSecondsAgo }
+      });
+
+      if (existingLog) {
+        console.log(`⚠️ Duplicate log detected for ${cardID}, skipping...`);
+        return;
+      }
+
       const accessLog = new AccessLog({
         userId: user?._id || null,
         deviceId: device?._id || null,

@@ -108,23 +108,44 @@ const studentController = {
     try {
       const { tag } = req.params;
       
-      // Find user by RFID tag and ensure they are a student
-      const student = await User.findOne({ 
+      // First, check if the card exists in the database (regardless of active status)
+      const userExists = await User.findOne({ 
         rfIdTag: tag.toUpperCase(), 
-        accessLevel: 'student',
-        isActive: true 
+        accessLevel: 'student'
       }).select('-password');
 
-      if (!student) {
+      if (!userExists) {
+        // Card is not registered at all
         return res.status(404).json({
           success: false,
-          message: "Student not found or card not registered",
+          message: "Card not registered",
+          error: "CARD_NOT_REGISTERED"
         });
       }
 
+      if (!userExists.isActive) {
+        // Card is registered but inactive
+        return res.status(403).json({
+          success: false,
+          message: "Card is registered but inactive",
+          error: "CARD_INACTIVE",
+          data: {
+            name: userExists.name,
+            email: userExists.email,
+            studentId: userExists.studentId,
+            course: userExists.course,
+            yearLevel: userExists.yearLevel,
+            rfIdTag: userExists.rfIdTag,
+            isActive: userExists.isActive,
+            profilePicture: userExists.profilePicture
+          }
+        });
+      }
+
+      // Card is registered and active
       res.status(200).json({
         success: true,
-        data: student,
+        data: userExists,
       });
     } catch (error) {
       console.error("Error fetching student by RFID:", error);
@@ -147,7 +168,7 @@ const studentController = {
         yearLevel,
         rfIdTag,
         accessLevel = "student",
-        isActive = true,
+        isActive = true
       } = req.body;
 
       // Validate required fields

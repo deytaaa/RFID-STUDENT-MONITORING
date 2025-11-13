@@ -87,15 +87,18 @@ const ExitLogs = () => {
       console.log('📊 Exit logs API response:', data);
       
       if (data.success && data.data && data.data.length > 0) {
-        const transformedLogs = data.data.map(log => ({
+        // Filter to only show successful exits (accessGranted: true)
+        const successfulExits = data.data.filter(log => log.accessGranted === true);
+        
+        const transformedLogs = successfulExits.map(log => ({
           id: log._id,
           timestamp: new Date(log.timestamp).toLocaleString(),
           user: log.userId?.name || log.userId?.email || 'Unknown User',
           rfid: log.userId?.rfidTag || log.rfidTag || 'Unknown',
-          status: log.status || (log.direction === 'exit' ? 'exited' : 'unknown'),
-          location: log.deviceId?.location || 'Unknown Location'
+          status: 'exited', // Only successful exits should appear here
+          location: log.location || log.deviceId?.location || 'Unknown Location'
         }))
-        console.log('✅ Found', transformedLogs.length, 'exit logs');
+        console.log('✅ Found', transformedLogs.length, 'successful exit logs');
         setLogs(transformedLogs)
         setFilteredLogs(transformedLogs)
       } else {
