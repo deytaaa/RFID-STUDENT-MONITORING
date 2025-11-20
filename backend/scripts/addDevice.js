@@ -32,10 +32,11 @@ const addDevice = async () => {
         serialPort: 'COM3',
         baudRate: 9600,
         ledPins: {
-          green: 2,
-          red: 3
+          green: 7,
+          red: 8
         },
-        buzzerPin: 4,
+        buzzerPin: 5,
+        servoPin: 6,
         readerPins: {
           ss: 10,
           rst: 9

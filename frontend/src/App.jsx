@@ -147,13 +147,13 @@ function AppWithLocation({ gateStatus, systemStatus, user, onLogout, dashboardPr
         <div className="page-content">
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" />} />
-            <Route path="/dashboard" element={dashboardPresenter ? <Dashboard gateStatus={gateStatus} presenter={dashboardPresenter} /> : null} />
-            <Route path="/access-logs" element={<AccessLogs />} />
+            <Route path="/dashboard" element={dashboardPresenter ? <Dashboard gateStatus={gateStatus} presenter={dashboardPresenter} user={user} /> : null} />
+            <Route path="/access-logs" element={<AccessLogs user={user} />} />
             <Route path="/student-management" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <EnhancedStudentManagement user={user} /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage students.</div>} />
             <Route path="/realtime-rfid" element={<RealTimeRFID />} />
             <Route path="/settings" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <Settings /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can access system settings.</div>} />
             <Route path="/user-management" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <UserManagement user={user} /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage users.</div>} />
-            <Route path="/exit-logs" element={<ExitLogs />} />
+            <Route path="/exit-logs" element={<ExitLogs user={user} />} />
             {/* Add more routes as needed */}
             <Route path="*" element={<Navigate to="/dashboard" />} />
           </Routes>

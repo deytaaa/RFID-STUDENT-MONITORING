@@ -14,7 +14,7 @@ import WebSocketService from "../../services/WebSocketService";
 import ApiService from "../../services/ApiService.js";
 import "./Dashboard.css";
 
-const Dashboard = () => {
+const Dashboard = ({ user }) => {
   const [stats, setStats] = useState({
     totalAccess: 0,
     totalDenied: 0,
@@ -291,13 +291,15 @@ const Dashboard = () => {
           </div>
         </div>
         {/* Access Analytics - Centered */}
-        <div className="card modern-card access-analytics-centered" style={{ width: 600, height: 440, margin: '0 auto' }}>
-          <div className="card-header-modern" style={{ textAlign: 'center' }}>
-            <h3 className="card-title-modern">Access Analytics</h3>
-            <p className="card-subtitle-modern">Last 7 days</p>
+        {(user && (user.role === 'superadmin' || user.accessLevel === 'superadmin')) && (
+          <div className="card modern-card access-analytics-centered" style={{ width: 600, height: 440, margin: '0 auto' }}>
+            <div className="card-header-modern" style={{ textAlign: 'center' }}>
+              <h3 className="card-title-modern">Access Analytics</h3>
+              <p className="card-subtitle-modern">Last 7 days</p>
+            </div>
+            <AccessChart data={chartData} />
           </div>
-          <AccessChart data={chartData} />
-        </div>
+        )}
       </div>
     </div>
   );

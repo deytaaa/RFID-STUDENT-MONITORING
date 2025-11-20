@@ -2,28 +2,45 @@
 
 ## 🔌 Component Wiring Diagram
 
+### 🎨 Wire Color Coding Standard
+
+Follow this color coding for professional assembly and easy troubleshooting:
+
+```
+🔴 Red Wire     →    Power (VCC, 5V, 3.3V)
+⚫ Black Wire   →    Ground (GND)
+🔵 Blue Wire    →    Data/Communication (SDA, MISO)
+🟡 Yellow Wire  →    Clock/Communication (SCL, SCK)
+🟢 Green Wire   →    MOSI/LED Positive
+🟠 Orange Wire  →    Reset/Control Signals
+⚪ White Wire   →    Chip Select (SS/SDA)
+🟤 Brown Wire   →    Alternative Ground/Clock
+🟣 Purple Wire  →    Alternative Data Lines
+🩷 Pink Wire    →    Alternative Control
+```
+
 ### Entry & Exit RFID-RC522 Module Connections
 
 ```
-Entry RFID Module    →    Arduino UNO
-VCC           →    3.3V
-RST           →    Pin 9
-GND           →    GND
-MISO          →    Pin 12
-MOSI          →    Pin 11
-SCK           →    Pin 13
-SDA/SS        →    Pin 10
+Entry RFID Module    →    Arduino UNO              Wire Color
+VCC           →    3.3V                     (Red Wire)
+RST           →    Pin 9                    (Orange Wire)
+GND           →    GND                      (Black Wire)
+MISO          →    Pin 12                   (Blue Wire)
+MOSI          →    Pin 11                   (Green Wire)
+SCK           →    Pin 13                   (Yellow Wire)
+SDA/SS        →    Pin 10                   (White Wire)
 
 ### Future Enhancement - Not Yet Implemented
 
-Exit RFID Module    →    Arduino UNO (Planned - Pin assignments need revision)
-VCC           →    3.3V
-RST           →    Pin 2   ← Changed to avoid LED conflict
-GND           →    GND
-MISO          →    Pin A0  ← Changed to avoid Servo conflict
-MOSI          →    Pin A1  ← Changed to avoid Buzzer conflict
-SCK           →    Pin A2  ← Changed to avoid LED conflict
-SDA/SS        →    Pin 4
+Exit RFID Module    →    Arduino UNO (Planned)        Wire Color
+VCC           →    3.3V                     (Red Wire)
+RST           →    Pin 2   ← Changed        (Pink Wire)
+GND           →    GND                      (Black Wire)
+MISO          →    Pin A0  ← Changed        (Purple Wire)
+MOSI          →    Pin A1  ← Changed        (Gray Wire)
+SCK           →    Pin A2  ← Changed        (Brown Wire)
+SDA/SS        →    Pin 4                    (Violet Wire)
 
 NOTE: Current implementation uses Pins 7 & 8 for LEDs, so exit RFID
       requires different pins to avoid conflicts.
@@ -32,36 +49,38 @@ NOTE: Current implementation uses Pins 7 & 8 for LEDs, so exit RFID
 ### Servo Motor (Gate Mechanism)
 
 ```
-Servo Motor   →    Arduino UNO
-Red (VCC)     →    5V
-Brown (GND)   →    GND
-Orange (PWM)  →    Pin 6
+Servo Motor   →    Arduino UNO              Wire Color
+Red (VCC)     →    5V                       (Red Wire - Power)
+Brown (GND)   →    GND                      (Brown/Black Wire - Ground)
+Orange (PWM)  →    Pin 6                    (Orange/Yellow Wire - Signal)
 ```
 
 ### LCD Display (16x2 with I2C) optional!! im not using this
 
 ```
-LCD I2C       →    Arduino UNO
-VCC           →    5V
-GND           →    GND
-SDA           →    A4
-SCL           →    A5
+LCD I2C       →    Arduino UNO              Wire Color
+VCC           →    5V                       (Red Wire)
+GND           →    GND                      (Black Wire)
+SDA           →    A4                       (Blue Wire - Data)
+SCL           →    A5                       (Yellow Wire - Clock)
 ```
 
 ### LED Indicators
 
 ```
-Green LED     →    Pin 7 (with 220Ω resistor)
-Red LED       →    Pin 8 (with 220Ω resistor)
-Both LEDs GND →    GND
+Component           →    Arduino UNO              Wire Color
+Green LED (+)       →    Pin 7 (with 220Ω)       (Green Wire)
+Green LED (-)       →    GND                      (Black Wire)
+Red LED (+)         →    Pin 8 (with 220Ω)       (Red Wire)
+Red LED (-)         →    GND                      (Black Wire)
 ```
 
 ### Buzzer
 
 ```
-Buzzer        →    Arduino UNO
-Positive      →    Pin 5
-Negative      →    GND
+Buzzer        →    Arduino UNO              Wire Color
+Positive      →    Pin 5                    (Red Wire)
+Negative      →    GND                      (Black Wire)
 ```
 
 ## 📊 Current Working Pin Assignments
@@ -127,29 +146,55 @@ Install these libraries in Arduino IDE:
 ### Step 1: Breadboard Setup
 
 1. Place Arduino UNO next to breadboard
-2. Connect power rails (red = 5V, blue = GND)
-3. Use jumper wires to connect 5V and GND to breadboard rails
+2. Connect power rails using **RED** wire (5V) and **BLACK** wire (GND)
+3. Use **RED** jumper wire: Arduino 5V → Breadboard positive rail (+)
+4. Use **BLACK** jumper wire: Arduino GND → Breadboard negative rail (-)
 
-### Step 2: RFID Module
+### Step 2: Entry RFID Module
 
 1. Connect RFID-RC522 to breadboard
-2. Wire according to pin diagram above
-3. **Important**: Use 3.3V for VCC, NOT 5V!
+2. Use the following **color-coded wires**:
+   - **RED** wire: RFID VCC → Arduino 3.3V ⚠️ (NOT 5V!)
+   - **BLACK** wire: RFID GND → Arduino GND
+   - **ORANGE** wire: RFID RST → Arduino Pin 9
+   - **WHITE** wire: RFID SDA/SS → Arduino Pin 10
+   - **GREEN** wire: RFID MOSI → Arduino Pin 11
+   - **BLUE** wire: RFID MISO → Arduino Pin 12
+   - **YELLOW** wire: RFID SCK → Arduino Pin 13
 
-### Step 3: Servo Motor
+### Step 3: Servo Motor (Gate Mechanism)
 
-1. Connect servo directly to Arduino (strong enough power)
-2. Test servo movement before final assembly
+1. Connect servo using **standard servo wire colors**:
+   - **RED** wire: Servo VCC → Arduino 5V
+   - **BROWN/BLACK** wire: Servo GND → Arduino GND
+   - **ORANGE/YELLOW** wire: Servo Signal → Arduino Pin 6
+2. Servo has built-in wires - **DO NOT** cut or modify them
+3. Test servo movement before final assembly
 
-### Step 4: LCD Display
+### Step 4: LCD Display (Optional - Not Currently Used)
 
-1. Connect I2C LCD module
+1. Connect I2C LCD using **color-coded wires**:
+   - **RED** wire: LCD VCC → Arduino 5V
+   - **BLACK** wire: LCD GND → Arduino GND
+   - **BLUE** wire: LCD SDA → Arduino A4
+   - **YELLOW** wire: LCD SCL → Arduino A5
 2. Test display with simple "Hello World" sketch first
 
 ### Step 5: LEDs and Buzzer
 
-1. Use 220Ω resistors for LEDs to prevent burnout
-2. Connect buzzer directly (built-in current limiting)
+**LED Connections** (with 220Ω resistors):
+
+1. **Green LED**:
+   - **GREEN** wire: LED long leg (+) → 220Ω resistor → Arduino Pin 7
+   - **BLACK** wire: LED short leg (-) → Arduino GND
+2. **Red LED**:
+   - **RED** wire: LED long leg (+) → 220Ω resistor → Arduino Pin 8
+   - **BLACK** wire: LED short leg (-) → Arduino GND
+
+**Buzzer Connection**: 3. **Piezo Buzzer**:
+
+- **RED** wire: Buzzer positive → Arduino Pin 5
+- **BLACK** wire: Buzzer negative → Arduino GND
 
 ### Step 6: Ultrasonic Sensor
 

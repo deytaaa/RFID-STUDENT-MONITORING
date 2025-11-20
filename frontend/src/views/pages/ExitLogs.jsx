@@ -6,7 +6,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import './AccessLogs.css'
 
-const ExitLogs = () => {
+const ExitLogs = ({ user }) => {
   const [logs, setLogs] = useState([])
   const [filteredLogs, setFilteredLogs] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -197,10 +197,12 @@ const ExitLogs = () => {
         </div>
       )}
       <div className="logs-header">
-        <button className="btn btn-primary" style={{ marginLeft: 'auto' }}  onClick={handleExportPDF}>
-          <Download size={16}/>
-          Export PDF 
-        </button>
+        {(user && (user.role === 'superadmin' || user.accessLevel === 'superadmin')) && (
+          <button className="btn btn-primary" style={{ marginLeft: 'auto' }}  onClick={handleExportPDF}>
+            <Download size={16}/>
+            Export PDF 
+          </button>
+        )}
       </div>
       <div className="logs-filters">
         <div className="search-filter">
