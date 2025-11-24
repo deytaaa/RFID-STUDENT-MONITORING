@@ -133,78 +133,25 @@ const RealTimeRFID = () => {
 
     const handleAccessGranted = async (data) => {
       console.log('✅ Access Granted:', JSON.stringify(data))
-      
+      // Always fetch the latest student info from backend
       const student = await fetchStudentByCardID(data.cardID);
-      setRecentActivity(prev => {
-        let displayStudent = student;
-        
-        // For access granted, we should always have valid student info
-        // But just in case, handle edge cases
-        if (!student || student.status === 'unauthorized' || student.status === 'error' || 
-            student.name === 'Card not registered' || student.name === 'Unable to fetch card info') {
-          displayStudent = { name: 'Unknown User', profilePicture: '', cardID: data.cardID };
-        }
-        
-        const activity = {
-          id: `${Date.now()}-${Math.random()}`,
-          cardID: data.cardID,
-          status: 'granted',
-          timestamp: new Date(),
-          message: 'Access Granted - Entry Confirmed',
-          student: displayStudent
-        }
-        
-        // Simply add the new activity to the top of the list
-        return [activity, ...prev.slice(0, 9)]
-      })
-      
+      setAccessStudent({ ...student }); // Force new object reference
       setRfidStatus(prev => ({
         ...prev,
         lastAccess: {
           cardID: data.cardID,
           status: 'granted',
-          timestamp: new Date(data.receivedAt || new Date()),
+          timestamp: new Date(data.receivedAt || data.timestamp || new Date()),
           provisional: false // Mark as confirmed
         },
         gateStatus: 'open'
       }))
-      
-      setAccessStudent(student);
+      // Do NOT update recentActivity here; let handleStudentTap fetch from backend
     }
 
     const handleAccessDenied = async (data) => {
       console.log('🚫 Access Denied:', JSON.stringify(data))
-      
       const student = await fetchStudentByCardID(data.cardID);
-      setRecentActivity(prev => {
-        let message = 'Access Denied';
-        let displayStudent = student;
-        
-        if (student?.status === 'inactive') {
-          message = 'Access Denied - Not Active';
-          // For inactive cards, we have the student info, so use it
-          // Make sure to display the actual student name
-        } else if (student?.status === 'unauthorized' || student?.name === 'Card not registered') {
-          message = 'Access Denied - Card Not Registered';
-          displayStudent = { name: 'Unknown User', profilePicture: '', cardID: data.cardID };
-        } else if (student?.status === 'error' || student?.name === 'Unable to fetch card info') {
-          message = 'Access Denied - Unable to Verify Card';
-          displayStudent = { name: 'Unknown User', profilePicture: '', cardID: data.cardID };
-        }
-        
-        const activity = {
-          id: `${Date.now()}-${Math.random()}`,
-          cardID: data.cardID,
-          status: 'denied',
-          timestamp: new Date(),
-          message: message,
-          student: displayStudent
-        }
-        
-        // Simply add the new activity to the top of the list
-        return [activity, ...prev.slice(0, 9)]
-      })
-      
       setRfidStatus(prev => ({
         ...prev,
         lastAccess: {
@@ -214,8 +161,8 @@ const RealTimeRFID = () => {
           provisional: false // Mark as confirmed
         }
       }))
-
       setAccessStudent(student);
+      // Do NOT update recentActivity here; let handleStudentTap fetch from backend
     }
 
     const handleGateClosed = (data) => {
@@ -257,41 +204,46 @@ const RealTimeRFID = () => {
 
     const handleStudentTap = async (tapEvent) => {
       console.log('📡 Frontend received Student Tap Event:', JSON.stringify(tapEvent))
-      
-      // Handle both entrance and exit activities from API/Postman
-      const isExit = tapEvent.status === 'exited' || (tapEvent.location && tapEvent.location.toLowerCase().includes('exit'));
-      
-      // Fetch full student details if we have a card ID
-      let student = null;
-      if (tapEvent.rfid && tapEvent.rfid !== 'Unknown') {
-        try {
-          student = await fetchStudentByCardID(tapEvent.rfid);
-          console.log('📡 Fetched student for studentTap:', student);
-        } catch (error) {
-          console.error('Error fetching student for studentTap:', error);
-        }
+      // After receiving a studentTap event, fetch the latest access logs from the backend for perfect sync
+      const activities = await fetchRecentActivity(true); // pass flag to get activities
+      // Also update the Recent Access card with the latest log
+      if (activities && activities.length > 0) {
+        const latest = activities[0];
+        setRfidStatus(prev => ({
+          ...prev,
+          lastAccess: {
+            cardID: latest.cardID,
+            status: latest.status === 'exited' ? 'granted' : latest.status, // treat 'exited' as 'granted' for display
+            timestamp: latest.timestamp,
+            provisional: false
+          }
+        }));
+        setAccessStudent(latest.student);
       }
-      
-      // Use fetched student data or fallback to event data
-      const displayStudent = student || {
-        name: tapEvent.user || 'Unknown User',
-        course: tapEvent.course || 'Unknown Course',
-        profilePicture: ''
-      };
-      
-      // Add to recent activity with proper student data
-      const activity = {
-        id: tapEvent.id || `${Date.now()}-${Math.random()}`,
-        cardID: tapEvent.rfid || 'Unknown',
-        status: tapEvent.status === 'exited' ? 'exited' : (tapEvent.status === 'entered' ? 'granted' : tapEvent.status),
-        timestamp: new Date(tapEvent.timestamp || new Date()),
-        message: isExit ? 'Access Granted - Exit Confirmed' : 'Access Granted - Entry Confirmed',
-        location: tapEvent.location || 'Unknown Location',
-        student: displayStudent
-      };
-      
-      setRecentActivity(prev => [activity, ...prev.slice(0, 9)]);
     }
+
+    // NEW: Handle exit scan events
+    const handleExitScan = async (data) => {
+      console.log('🚪 Exit Scan:', JSON.stringify(data));
+      const student = await fetchStudentByCardID(data.cardID);
+      setRecentActivity(prev => {
+        let displayStudent = student;
+        if (!student || student.status === 'unauthorized' || student.status === 'error' || 
+            student.name === 'Card not registered' || student.name === 'Unable to fetch card info') {
+          displayStudent = { name: 'Unknown User', profilePicture: '', cardID: data.cardID };
+        }
+        const activity = {
+          id: `${Date.now()}-${Math.random()}`,
+          cardID: data.cardID,
+          status: data.status === 'exited' ? 'exited' : 'granted',
+          timestamp: new Date(),
+          message: data.status === 'exited' ? 'Access Granted - Exit Confirmed' : 'Exit Scan',
+          student: displayStudent,
+          location: 'Exit'
+        };
+        return [activity, ...prev.slice(0, 9)];
+      });
+    };
 
     // Attach event listeners
     WebSocketService.on('system-status', handleSystemReady)
@@ -301,9 +253,10 @@ const RealTimeRFID = () => {
     WebSocketService.on('arduino-gate-closed', handleGateClosed)
     WebSocketService.on('arduino-gate-open', handleGateOpen)
     WebSocketService.on('arduino-log', handleArduinoLog)
-    WebSocketService.on('studentTap', handleStudentTap) // Handle API-created access logs
+    WebSocketService.on('studentTap', handleStudentTap)
     WebSocketService.on('connected', handleConnected)
     WebSocketService.on('disconnected', handleDisconnected)
+    WebSocketService.on('arduino-exit-scan', handleExitScan) // NEW: Listen for exit scan
 
     // Cleanup on unmount
     return () => {
@@ -318,15 +271,15 @@ const RealTimeRFID = () => {
       WebSocketService.off('studentTap', handleStudentTap)
       WebSocketService.off('connected', handleConnected)
       WebSocketService.off('disconnected', handleDisconnected)
+      WebSocketService.off('arduino-exit-scan', handleExitScan)
     }
   }, [])
 
   // Move fetchRecentActivity outside useEffect so it can be called from anywhere
-  const fetchRecentActivity = React.useCallback(async () => {
+  const fetchRecentActivity = React.useCallback(async (returnActivities = false) => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) return; // Skip if not authenticated
-      
+      if (!token) return returnActivities ? [] : undefined;
       const result = await ApiService.get('/access-logs?limit=10');
       if (result.success && Array.isArray(result.data) && result.data.length > 0) {
         // Fetch student info for each activity
@@ -373,12 +326,15 @@ const RealTimeRFID = () => {
           };
         }));
         setRecentActivity(activities);
+        return returnActivities ? activities : undefined;
       } else {
         setRecentActivity([]);
+        return returnActivities ? [] : undefined;
       }
     } catch (error) {
-      // Error intentionally ignored
+      setRecentActivity([]);
       console.log('Error fetching recent activity:', error);
+      return returnActivities ? [] : undefined;
     }
   }, []);
 
@@ -386,13 +342,6 @@ const RealTimeRFID = () => {
     // Always fetch from backend on mount
     fetchRecentActivity();
   }, [fetchRecentActivity]);
-
-  useEffect(() => {
-    // Always fetch from backend when route changes (e.g., tab switch)
-    fetchRecentActivity();
-  }, [location.pathname, fetchRecentActivity]);
-
-  // Remove localStorage.setItem for recentActivity
 
   // Fetch system status on mount and every 10 seconds
   useEffect(() => {
@@ -664,6 +613,8 @@ const RealTimeRFID = () => {
             <h3><BsClipboardData size={24} style={{marginRight: 12}} /> Recent Activity</h3>
             <div className="status-content">
               <RecentActivity data={recentActivityData} />
+              {/* DEBUG: Show recentActivityData for troubleshooting */}
+              {/* <pre>{JSON.stringify(recentActivityData, null, 2)}</pre> */}
             </div>
           </div>
         </div>

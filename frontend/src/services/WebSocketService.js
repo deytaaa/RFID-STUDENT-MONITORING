@@ -68,6 +68,15 @@ class WebSocketService {
           case 'GATE_CLOSED':
             this.emit('arduino-gate-closed', data)
             break
+          case 'EXIT_SCANNED':
+            this.emit('arduino-exit-scan', data)
+            break
+          case 'ENTRY_SCANNED':
+            this.emit('arduino-entry-scan', data)
+            break
+          case 'GATE_OPEN':
+            this.emit('arduino-gate-open', data)
+            break
           default:
             this.emit('arduino-event', data)
         }

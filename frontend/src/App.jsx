@@ -122,6 +122,7 @@ function App() {
 function AppWithLocation({ gateStatus, systemStatus, user, onLogout, dashboardPresenter }) {
   const location = useLocation();
 
+  // Helper to determine current page for Header component
   const getCurrentPage = (pathname) => {
     if (pathname === '/dashboard') return 'dashboard';
     if (pathname === '/access-logs') return 'access-logs';
@@ -133,6 +134,7 @@ function AppWithLocation({ gateStatus, systemStatus, user, onLogout, dashboardPr
     return 'dashboard';
   };
 
+  // Render main app layout with Sidebar, Header, and Routes
   return (
     <div className="app">
       <Sidebar user={user} />

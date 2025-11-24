@@ -19,31 +19,54 @@ Follow this color coding for professional assembly and easy troubleshooting:
 🩷 Pink Wire    →    Alternative Control
 ```
 
-### Entry & Exit RFID-RC522 Module Connections
+### Entry & Exit RFID-RC522 Module Connections (Dual Reader, Shared SPI)
 
 ```
 Entry RFID Module    →    Arduino UNO              Wire Color
-VCC           →    3.3V                     (Red Wire)
-RST           →    Pin 9                    (Orange Wire)
-GND           →    GND                      (Black Wire)
-MISO          →    Pin 12                   (Blue Wire)
-MOSI          →    Pin 11                   (Green Wire)
-SCK           →    Pin 13                   (Yellow Wire)
-SDA/SS        →    Pin 10                   (White Wire)
+VCC           →    3.3V (shared)             (Red Wire)
+RST           →    Pin 9                     (Orange Wire)
+GND           →    GND (shared)              (Black Wire)
+MISO          →    Pin 12 (shared SPI)       (Blue Wire)
+MOSI          →    Pin 11 (shared SPI)       (Green Wire)
+SCK           →    Pin 13 (shared SPI)       (Yellow Wire)
+SDA/SS        →    Pin 10                    (White Wire)
 
-### Future Enhancement - Not Yet Implemented
+Exit RFID Module    →    Arduino UNO              Wire Color
+VCC           →    3.3V (shared)             (Red Wire)
+RST           →    Pin 3                     (Pink Wire)
+GND           →    GND (shared)              (Black Wire)
+MISO          →    Pin 12 (shared SPI)       (Blue Wire)
+MOSI          →    Pin 11 (shared SPI)       (Green Wire)
+SCK           →    Pin 13 (shared SPI)       (Yellow Wire)
+SDA/SS        →    Pin 4                     (Violet Wire)
+```
 
-Exit RFID Module    →    Arduino UNO (Planned)        Wire Color
-VCC           →    3.3V                     (Red Wire)
-RST           →    Pin 2   ← Changed        (Pink Wire)
-GND           →    GND                      (Black Wire)
-MISO          →    Pin A0  ← Changed        (Purple Wire)
-MOSI          →    Pin A1  ← Changed        (Gray Wire)
-SCK           →    Pin A2  ← Changed        (Brown Wire)
-SDA/SS        →    Pin 4                    (Violet Wire)
+**Note:**
 
-NOTE: Current implementation uses Pins 7 & 8 for LEDs, so exit RFID
-      requires different pins to avoid conflicts.
+- Both RFID modules share the Arduino's single 3.3V and GND pins. Use a breadboard rail or jumper wires to split power.
+- SPI data lines (MOSI, MISO, SCK) are shared (Pins 11, 12, 13). Do NOT use A0, A1, or A2 for SPI data lines.
+- Each RFID module must have a unique SS (SDA) and RST pin.
+- Make sure no other device uses pins 3, 4, 9, or 10.
+
+#### Shared SPI Bus Diagram (ASCII)
+
+```
+         +-------------------+         +-------------------+
+         |   RFID ENTRY      |         |   RFID EXIT       |
+         +-------------------+         +-------------------+
+         | VCC  GND  SCK     |         | VCC  GND  SCK     |
+         |  |    |    |      |         |  |    |    |      |
+         |  |    |    |      |         |  |    |    |      |
+         +--+----+----+------+---------+--+----+----+------|
+            |    |    |      |            |    |    |      |
+           3.3V GND  13(SCK) |           3.3V GND  13(SCK) |
+                 |    |      |                 |    |      |
+                12(MISO)     |                12(MISO)     |
+                 |           |                 |           |
+                11(MOSI)     |                11(MOSI)     |
+                 |           |                 |           |
+                10(SS)       |                4(SS)        |
+                 9(RST)      |                3(RST)       |
 ```
 
 ### Servo Motor (Gate Mechanism)
@@ -89,18 +112,20 @@ Negative      →    GND                      (Black Wire)
 
 ```
 Arduino UNO Pin Usage:
+├── Pin 3:  Exit RFID RST
+├── Pin 4:  Exit RFID SS
 ├── Pin 5:  Piezo Buzzer
 ├── Pin 6:  Servo Motor PWM
 ├── Pin 7:  Green LED (Access Granted)
 ├── Pin 8:  Red LED (Access Denied)
 ├── Pin 9:  Entry RFID RST
 ├── Pin 10: Entry RFID SS
-├── Pin 11: Entry RFID MOSI (SPI)
-├── Pin 12: Entry RFID MISO (SPI)
-├── Pin 13: Entry RFID SCK (SPI)
-├── 3.3V:   RFID Module Power
+├── Pin 11: RFID MOSI (SPI, shared)
+├── Pin 12: RFID MISO (SPI, shared)
+├── Pin 13: RFID SCK (SPI, shared)
+├── 3.3V:   RFID Module Power (shared)
 ├── 5V:     Servo Motor Power
-└── GND:    Common Ground
+└── GND:    Common Ground (shared)
 ```
 
 ### 🔄 Database Configuration Update Needed:
@@ -229,7 +254,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2); // Try 0x27 or 0x3F
 ## 🚪 Dual RFID Reader Setup
 
 - Use one RFID reader for entry and another for exit.
-- Connect both modules to separate pins on Arduino UNO.
+- Connect both modules to shared SPI lines (MOSI, MISO, SCK) and unique SS/RST pins as shown above.
 - In your Arduino code, distinguish between entry and exit scans (e.g., send a device/location identifier to backend).
 - Update backend to log entry and exit events separately.
 

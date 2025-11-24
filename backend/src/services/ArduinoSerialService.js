@@ -118,6 +118,8 @@ class ArduinoSerialService {
       switch (data.event) {
         case 'SYSTEM_READY': this.handleSystemReady(data); break;
         case 'CARD_SCANNED': this.handleCardScanned(data); break;
+        case 'ENTRY_SCANNED': this.handleEntryScanned(data); break; // NEW
+        case 'EXIT_SCANNED': this.handleExitScanned(data); break;   // NEW
         case 'ACCESS_GRANTED': this.handleAccessGranted(data); break;
         case 'ACCESS_DENIED': this.handleAccessDenied(data); break;
         case 'GATE_OPEN': this.handleGateOpen(data); break;
@@ -226,15 +228,130 @@ class ArduinoSerialService {
   }
 
   // ----------------------------
+  // Handle Entry RFID Scan
+  // ----------------------------
+  async handleEntryScanned(data) {
+    // Same as handleCardScanned, but for ENTRY
+    const formattedID = data.cardID.trim().toUpperCase();
+    const now = Date.now();
+    const lastTime = this.lastScanTime.get('entry_' + formattedID) || 0;
+    if (now - lastTime < this.cooldownMs) {
+      console.log(`⏱️ Entry card ${formattedID} still in cooldown, ignoring...`);
+      return;
+    }
+    this.lastScanTime.set('entry_' + formattedID, now);
+    let status = 'denied';
+    let user = null;
+    try {
+      user = await User.findOne({ rfIdTag: formattedID });
+      // Use deviceSerial from Arduino data
+      const device = await Device.findOne({ serialNumber: data.deviceSerial });
+      let autoLockDelay = 10;
+      try {
+        const delaySetting = await Setting.getSetting('autoLockDelay');
+        if (typeof delaySetting === 'number' && delaySetting > 0) {
+          autoLockDelay = delaySetting;
+        }
+      } catch (err) {
+        console.error('Could not fetch autoLockDelay setting:', err.message);
+      }
+      if (!user || !user.isActive) {
+        this.sendCommand(`ACCESS_DENIED:${formattedID}`);
+        console.log(`🚫 Entry access denied for ${formattedID}`);
+        status = 'denied';
+        await this.createNotificationForAllAdmins({
+          type: 'access_denied',
+          title: 'Entry Access Denied',
+          message: `Unauthorized entry attempt with card ${formattedID}`,
+          data: { cardID: formattedID, deviceId: device?._id?.toString(), location: device?.location || 'Unknown Location' },
+          priority: 'high',
+          category: 'security'
+        });
+      } else {
+        this.sendCommand(`ACCESS_GRANTED:${formattedID}:${autoLockDelay}`);
+        status = 'entered';
+        console.log(`✅ Entry access granted for ${user.name}`);
+        await this.createNotificationForAllAdmins({
+          type: 'access_granted',
+          title: 'Entry Access Granted',
+          message: `${user.name} entered via card ${formattedID}`,
+          data: { cardID: formattedID, studentId: user._id?.toString(), studentName: user.name, deviceId: device?._id?.toString(), location: device?.location || 'Unknown Location' },
+          priority: 'low',
+          category: 'access'
+        });
+      }
+      await this.logAccess(device, formattedID, status, status === 'entered' ? 'Entry' : 'Denied', user);
+    } catch (err) {
+      console.error('❌ Error handling entry scan:', err.message);
+    }
+  }
+
+  // ----------------------------
+  // Handle Exit RFID Scan
+  // ----------------------------
+  async handleExitScanned(data) {
+    // Only log exit, do not send servo/LED commands
+    const formattedID = data.cardID.trim().toUpperCase();
+    const now = Date.now();
+    const lastTime = this.lastScanTime.get('exit_' + formattedID) || 0;
+    if (now - lastTime < this.cooldownMs) {
+      console.log(`⏱️ Exit card ${formattedID} still in cooldown, ignoring...`);
+      return;
+    }
+    this.lastScanTime.set('exit_' + formattedID, now);
+    let status = 'exited';
+    let user = null;
+    try {
+      user = await User.findOne({ rfIdTag: formattedID });
+      // Use deviceSerial from Arduino data
+      const device = await Device.findOne({ serialNumber: data.deviceSerial });
+      if (!user || !user.isActive) {
+        console.log(`🚫 Exit scan: unknown or inactive card ${formattedID}`);
+        status = 'denied';
+        await this.createNotificationForAllAdmins({
+          type: 'access_denied',
+          title: 'Exit Scan Denied',
+          message: `Unauthorized exit attempt with card ${formattedID}`,
+          data: { cardID: formattedID, deviceId: device?._id?.toString(), location: device?.location || 'Unknown Location' },
+          priority: 'medium',
+          category: 'access'
+        });
+      } else {
+        console.log(`🚪 Exit scan: ${user.name} exited`);
+        await this.createNotificationForAllAdmins({
+          type: 'access_granted',
+          title: 'Exit Recorded',
+          message: `${user.name} exited via card ${formattedID}`,
+          data: { cardID: formattedID, studentId: user._id?.toString(), studentName: user.name, deviceId: device?._id?.toString(), location: device?.location || 'Unknown Location' },
+          priority: 'low',
+          category: 'access'
+        });
+      }
+      // Always use reason 'Exit' so direction is always 'exit' for exit scans
+      await this.logAccess(device, formattedID, status, 'Exit', user);
+      // Notify frontend
+      this.io.emit('arduino-exit-scan', {
+        message: status === 'exited' ? `Exit recorded for card ${formattedID}` : `Exit denied for card ${formattedID}`,
+        cardID: formattedID,
+        status,
+        timestamp: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error('❌ Error handling exit scan:', err.message);
+    }
+  }
+
+  // ----------------------------
   // Access Control Event Handlers
   // ----------------------------
   async handleAccessGranted(data) { 
     console.log(`✅ Access granted event: ${data.cardID}`);
-    
-    // Emit WebSocket event for frontend notifications
+    // Fetch user info
+    const user = await User.findOne({ rfIdTag: data.cardID.trim().toUpperCase() });
     this.io.emit('arduino-access-granted', {
       message: `Access granted for card ${data.cardID}`,
       cardID: data.cardID,
+      user: user ? { name: user.name, profilePicture: user.profilePicture } : null,
       timestamp: new Date().toISOString()
     });
   }
@@ -331,18 +448,46 @@ class ArduinoSerialService {
         return;
       }
 
+      // Determine direction based on status/reason
+      let direction = 'entry';
+      if (status === 'exited' || (reason && reason.toLowerCase().includes('exit'))) {
+        direction = 'exit';
+      }
+
       const accessLog = new AccessLog({
         userId: user?._id || null,
         deviceId: device?._id || null,
         rfidTag: cardID,
-        accessGranted: status === 'entered', // <-- Fix: match new status
+        accessGranted: status === 'entered' || status === 'exited', // Fix: grant access for both entry and exit
         location: device?.location || 'Main Gate',
         method: 'rfid',
         reason,
+        direction, // Explicitly set direction
         timestamp: new Date()
       });
       await accessLog.save();
       console.log('📝 Access log saved:', accessLog);
+      // Emit real-time event for dashboard sync
+      if (this.io) {
+        this.io.emit('studentTap', {
+          id: accessLog._id,
+          timestamp: accessLog.timestamp,
+          user: user ? user.name : 'Unknown Student',
+          rfid: cardID,
+          status: accessLog.accessGranted ? (direction === 'exit' ? 'exited' : 'entered') : 'denied',
+          location: accessLog.location,
+          course: user ? user.course : undefined
+        });
+        console.log('📡 studentTap event emitted from logAccess:', {
+          id: accessLog._id,
+          timestamp: accessLog.timestamp,
+          user: user ? user.name : 'Unknown Student',
+          rfid: cardID,
+          status: accessLog.accessGranted ? (direction === 'exit' ? 'exited' : 'entered') : 'denied',
+          location: accessLog.location,
+          course: user ? user.course : undefined
+        });
+      }
     } catch (err) {
       console.error('❌ Error saving access log:', err.message);
     }

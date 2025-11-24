@@ -38,7 +38,10 @@ const accessLogController = {
       // Return paginated response
       const logsWithStatus = logs.map(log => ({
         ...log.toObject(),
-        status: log.accessGranted ? (log.direction === 'exit' ? 'exited' : 'entered') : 'denied'
+        // Set status to reflect both direction and access
+        status: log.accessGranted
+          ? (log.direction === 'exit' ? 'exited' : 'entered')
+          : (log.direction === 'exit' ? 'exit-denied' : 'entry-denied')
       }));
       res.setHeader('Cache-Control', 'no-store');
       res.status(200).json({

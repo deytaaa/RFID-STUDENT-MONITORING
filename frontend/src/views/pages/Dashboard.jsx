@@ -30,6 +30,8 @@ const Dashboard = ({ user }) => {
   const [error, setError] = useState(null);
   const [gateStatus, setGateStatus] = useState('closed');
   const [systemMetrics, setSystemMetrics] = useState({ rfidReader: 'connected', database: 'connected', network: 'strong' });
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
@@ -57,56 +59,56 @@ const Dashboard = ({ user }) => {
         }
       }
 
-      const todayLogs = logs.success
+      // Calculate stats for selected month/year
+      const monthLogs = logs.success
         ? logs.data.filter((log) => {
-            const today = new Date().toDateString();
-            const logDate = new Date(log.timestamp).toDateString();
-            return logDate === today;
+            const logDate = new Date(log.timestamp);
+            return logDate.getFullYear() === selectedYear && logDate.getMonth() === selectedMonth;
           })
         : [];
-
+      const todayLogs = monthLogs.filter((log) => {
+        const today = new Date();
+        return new Date(log.timestamp).toDateString() === today.toDateString();
+      });
       setStats({
-        totalAccess: logs.success
-          ? logs.data.filter((log) => log.accessGranted === true && log.direction !== "exit").length
-          : 0,
-        totalDenied: logs.success
-          ? logs.data.filter((log) => log.accessGranted === false).length
-          : 0,
+        totalAccess: monthLogs.filter((log) => log.accessGranted === true && log.direction !== "exit").length,
+        totalDenied: monthLogs.filter((log) => log.accessGranted === false).length,
         authorizedToday: todayLogs.filter((log) => log.accessGranted === true && log.direction !== "exit").length,
         deniedToday: todayLogs.filter((log) => log.accessGranted === false).length,
-        totalExit: logs.success
-          ? logs.data.filter((log) => log.accessGranted === true && log.direction === "exit").length
-          : 0,
+        totalExit: monthLogs.filter((log) => log.accessGranted === true && log.direction === "exit").length,
         todayExit: todayLogs.filter((log) => log.accessGranted === true && log.direction === "exit").length,
         systemUptime: uptimeString,
       });
 
-      // Prepare chart data for last 7 days, showing both granted and denied entries
-      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const now = new Date();
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(now);
-        d.setDate(now.getDate() - (6 - i));
+      // Prepare chart data for the selected month/year
+      const year = selectedYear;
+      const month = selectedMonth;
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const chartData = Array.from({ length: daysInMonth }, (_, i) => {
+        const dayDate = new Date(year, month, i + 1);
+        const dayLabel = `${dayDate.getDate()}`;
         return {
-          day: days[d.getDay()],
-          date: d.toDateString(),
+          day: dayLabel,
+          granted: logs.success
+            ? logs.data.filter((log) => {
+                const logDate = new Date(log.timestamp);
+                return logDate.getFullYear() === year &&
+                  logDate.getMonth() === month &&
+                  logDate.getDate() === dayDate.getDate() &&
+                  log.accessGranted === true;
+              }).length
+            : 0,
+          denied: logs.success
+            ? logs.data.filter((log) => {
+                const logDate = new Date(log.timestamp);
+                return logDate.getFullYear() === year &&
+                  logDate.getMonth() === month &&
+                  logDate.getDate() === dayDate.getDate() &&
+                  log.accessGranted === false;
+              }).length
+            : 0,
         };
       });
-      const chartData = last7Days.map(({ day, date }) => ({
-        day,
-        granted: logs.success
-          ? logs.data.filter((log) => {
-              const logDate = new Date(log.timestamp).toDateString();
-              return logDate === date && log.accessGranted === true;
-            }).length
-          : 0,
-        denied: logs.success
-          ? logs.data.filter((log) => {
-              const logDate = new Date(log.timestamp).toDateString();
-              return logDate === date && log.accessGranted === false;
-            }).length
-          : 0,
-      }));
       setChartData(chartData);
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
@@ -127,7 +129,7 @@ const Dashboard = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedMonth, selectedYear]);
 
   useEffect(() => {
     loadDashboardData();
@@ -292,10 +294,22 @@ const Dashboard = ({ user }) => {
         </div>
         {/* Access Analytics - Centered */}
         {(user && (user.role === 'superadmin' || user.accessLevel === 'superadmin')) && (
-          <div className="card modern-card access-analytics-centered" style={{ width: 600, height: 440, margin: '0 auto' }}>
+          <div className="card modern-card access-analytics-centered" style={{ width: 600, height: 480, margin: '0 auto' }}>
             <div className="card-header-modern" style={{ textAlign: 'center' }}>
               <h3 className="card-title-modern">Access Analytics</h3>
-              <p className="card-subtitle-modern">Last 7 days</p>
+              <p className="card-subtitle-modern">Selected Month: {selectedYear}-{String(selectedMonth+1).padStart(2,'0')}</p>
+              <div className="analytics-selector">
+                <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))}>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i} value={i}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
+                  ))}
+                </select>
+                <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <option key={i} value={new Date().getFullYear() - i}>{new Date().getFullYear() - i}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <AccessChart data={chartData} />
           </div>
