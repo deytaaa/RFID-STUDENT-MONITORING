@@ -151,6 +151,13 @@
   text-transform: uppercase;
 }
 
+.status-exit-denied {
+  background-color: #fee2e2 !important;
+  color: #dc2626 !important;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
 .location {
   color: #64748b;
 }

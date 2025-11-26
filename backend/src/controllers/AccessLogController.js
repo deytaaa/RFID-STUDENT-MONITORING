@@ -323,7 +323,15 @@ const accessLogController = {
         .limit(Number(limit))
         .populate("userId", "name email accessLevel course yearLevel")
         .populate("deviceId", "name location deviceType");
-      res.json({ success: true, data: logs });
+
+      // Add status field to each log (for frontend compatibility)
+      const logsWithStatus = logs.map(log => ({
+        ...log.toObject(),
+        status: log.accessGranted
+          ? 'exited'
+          : 'exit-denied'
+      }));
+      res.json({ success: true, data: logsWithStatus });
     } catch (error) {
       console.error("Error fetching exit logs:", error);
       res.status(500).json({ success: false, message: "Server Error" });

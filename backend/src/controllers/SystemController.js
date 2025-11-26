@@ -44,16 +44,16 @@ class SystemController {
   // Control gate operations
   async controlGate(req, res) {
     try {
-      const { action } = req.body;
+      const { action, gate } = req.body; // gate: 'entry' or 'exit'
       const io = req.app.get('io');
       let result;
 
       switch (action) {
         case 'open':
-          result = await this.openGate(req, res);
+          result = await this.openGate(req, res, gate);
           break;
         case 'close':
-          result = await this.closeGate(req, res);
+          result = await this.closeGate(req, res, gate);
           break;
         case 'lock':
         case 'emergency-lock':
@@ -75,7 +75,8 @@ class SystemController {
         payload: {
           status: this.gateStatus,
           timestamp: new Date().toISOString(),
-          action: action
+          action: action,
+          gate: gate || 'entry'
         }
       });
 
@@ -95,28 +96,36 @@ class SystemController {
   }
 
   // Gate operation methods
-  async openGate(req, res) {
+  async openGate(req, res, gate = 'entry') {
     if (this.gateStatus === 'locked') {
       throw new Error('Gate is locked. Unlock first before opening.');
     }
     this.gateStatus = 'open';
     // Send command to Arduino
     const arduinoService = req.app.get('arduinoService');
-    arduinoService.sendCommand('OPEN_GATE');
+    if (gate === 'exit') {
+      arduinoService.sendCommand('OPEN_GATE:EXIT');
+    } else {
+      arduinoService.sendCommand('OPEN_GATE:ENTRY');
+    }
     return {
       status: this.gateStatus,
-      message: 'Gate opened successfully'
+      message: `${gate === 'exit' ? 'Exit' : 'Entry'} gate opened successfully`
     };
   }
 
-  async closeGate(req, res) {
+  async closeGate(req, res, gate = 'entry') {
     this.gateStatus = 'closed';
     // Send command to Arduino
     const arduinoService = req.app.get('arduinoService');
-    arduinoService.sendCommand('CLOSE_GATE');
+    if (gate === 'exit') {
+      arduinoService.sendCommand('CLOSE_GATE:EXIT');
+    } else {
+      arduinoService.sendCommand('CLOSE_GATE:ENTRY');
+    }
     return {
       status: this.gateStatus,
-      message: 'Gate closed successfully'
+      message: `${gate === 'exit' ? 'Exit' : 'Entry'} gate closed successfully`
     };
   }
 

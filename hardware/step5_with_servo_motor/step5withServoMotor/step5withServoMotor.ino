@@ -33,6 +33,11 @@ const unsigned long gateOpenDuration = 5000; // 5 seconds open
 const unsigned long buzzerDuration = 200;    // buzzer duration
 bool buzzerOn = false;
 
+// Add exitActive for exit gate logic
+bool exitActive = false;
+unsigned long exitStartTime = 0;
+const unsigned long exitGateOpenDuration = 5000; // 5 seconds open for exit
+
 // Last scanned card
 String lastCardID_entry = "";
 String lastCardID_exit = "";
@@ -74,7 +79,7 @@ void loop() {
   unsigned long currentMillis = millis();
 
   // --- ENTRY READER ---
-  if (mfrc522_entry.PICC_IsNewCardPresent() && mfrc522_entry.PICC_ReadCardSerial()) {
+  if (!entryActive && mfrc522_entry.PICC_IsNewCardPresent() && mfrc522_entry.PICC_ReadCardSerial()) {
     String rfidTag = "";
     for (byte i = 0; i < mfrc522_entry.uid.size; i++) {
       if (mfrc522_entry.uid.uidByte[i] < 0x10) rfidTag += "0";
@@ -97,7 +102,7 @@ void loop() {
   }
 
   // --- EXIT READER ---
-  if (mfrc522_exit.PICC_IsNewCardPresent() && mfrc522_exit.PICC_ReadCardSerial()) {
+  if (!exitActive && mfrc522_exit.PICC_IsNewCardPresent() && mfrc522_exit.PICC_ReadCardSerial()) {
     String rfidTag = "";
     for (byte i = 0; i < mfrc522_exit.uid.size; i++) {
       if (mfrc522_exit.uid.uidByte[i] < 0x10) rfidTag += "0";
@@ -112,6 +117,9 @@ void loop() {
 
       Serial.println("[EXIT] Card Scanned: " + rfidTag);
       sendBackendData("EXIT_SCANNED", rfidTag, "Exit card detected", EXIT_DEVICE_SERIAL);
+      // Start exit sequence (simulate motorized exit gate)
+      exitActive = true;
+      exitStartTime = currentMillis;
       // Feedback for exit scan (blink green LED and beep)
       digitalWrite(RED_LED_PIN, LOW);
       digitalWrite(GREEN_LED_PIN, HIGH);
@@ -141,6 +149,16 @@ void loop() {
       entryActive = false;
       Serial.println("[ENTRY] Gate closed, ready for next scan");
       sendBackendData("GATE_CLOSED", lastCardID_entry, "Gate closed after entry", ENTRY_DEVICE_SERIAL);
+    }
+  }
+
+  // --- EXIT sequence non-blocking ---
+  if (exitActive) {
+    if (currentMillis - exitStartTime >= exitGateOpenDuration) {
+      // Simulate closing exit gate (add your motor code here if needed)
+      exitActive = false;
+      Serial.println("[EXIT] Exit gate closed, ready for next scan");
+      sendBackendData("EXIT_GATE_CLOSED", lastCardID_exit, "Exit gate closed after exit", EXIT_DEVICE_SERIAL);
     }
   }
 }
@@ -180,21 +198,36 @@ void checkSerialCommands() {
   if (Serial.available()) {
     String command = Serial.readStringUntil('\n');
     command.trim();
-    if (command == "OPEN_GATE") {
+    if (command == "OPEN_GATE" || command == "OPEN_GATE:ENTRY") {
       // Start entry sequence only when backend grants access
       entryActive = true;
       entryStartTime = millis();
       buzzerOn = true;
-      gateServo.write(90); // Open gate
+      gateServo.write(90); // Open entry gate
       digitalWrite(GREEN_LED_PIN, HIGH);
       digitalWrite(RED_LED_PIN, LOW);
       digitalWrite(BUZZER_PIN, HIGH);
-      Serial.println("[REMOTE] Gate OPENED by backend");
-      sendBackendData("GATE_OPEN", lastCardID_entry, "Gate opened by backend command", ENTRY_DEVICE_SERIAL);
-    } else if (command == "CLOSE_GATE") {
-      gateServo.write(0); // Close gate
-      Serial.println("[REMOTE] Gate CLOSED by backend");
-      sendBackendData("GATE_CLOSED", "", "Gate closed by backend command", ENTRY_DEVICE_SERIAL);
+      Serial.println("[REMOTE] Entry Gate OPENED by backend");
+      sendBackendData("GATE_OPEN", lastCardID_entry, "Entry gate opened by backend command", ENTRY_DEVICE_SERIAL);
+    } else if (command == "CLOSE_GATE" || command == "CLOSE_GATE:ENTRY") {
+      gateServo.write(0); // Close entry gate
+      Serial.println("[REMOTE] Entry Gate CLOSED by backend");
+      sendBackendData("GATE_CLOSED", "", "Entry gate closed by backend command", ENTRY_DEVICE_SERIAL);
+    } else if (command == "OPEN_GATE:EXIT") {
+      // Simulate exit gate open (no servo, just state)
+      exitActive = true;
+      exitStartTime = millis();
+      digitalWrite(GREEN_LED_PIN, HIGH);
+      digitalWrite(RED_LED_PIN, LOW);
+      tone(BUZZER_PIN, 1000, 200);
+      Serial.println("[REMOTE] Exit Gate OPENED by backend");
+      sendBackendData("EXIT_GATE_OPEN", lastCardID_exit, "Exit gate opened by backend command", EXIT_DEVICE_SERIAL);
+    } else if (command == "CLOSE_GATE:EXIT") {
+      exitActive = false;
+      digitalWrite(GREEN_LED_PIN, LOW);
+      digitalWrite(RED_LED_PIN, HIGH);
+      Serial.println("[REMOTE] Exit Gate CLOSED by backend");
+      sendBackendData("EXIT_GATE_CLOSED", "", "Exit gate closed by backend command", EXIT_DEVICE_SERIAL);
     } else if (command.startsWith("ACCESS_GRANTED:")) {
       // Parse card ID (and optionally pin) from command
       int firstColon = command.indexOf(':');

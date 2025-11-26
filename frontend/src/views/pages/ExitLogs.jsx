@@ -21,7 +21,8 @@ const ExitLogs = ({ user }) => {
 
     // Set up WebSocket listeners for real-time updates
     const handleStudentTap = (tapEvent) => {
-      if (tapEvent.status === 'exited') {
+      // Accept both successful and denied exit events
+      if (tapEvent.status === 'exited' || tapEvent.status === 'exit-denied') {
         const newLog = {
           id: tapEvent.id,
           timestamp: new Date(tapEvent.timestamp).toLocaleString(),
@@ -87,18 +88,16 @@ const ExitLogs = ({ user }) => {
       console.log('📊 Exit logs API response:', data);
       
       if (data.success && data.data && data.data.length > 0) {
-        // Filter to only show successful exits (accessGranted: true)
-        const successfulExits = data.data.filter(log => log.accessGranted === true);
-        
-        const transformedLogs = successfulExits.map(log => ({
+        // Show both successful and denied exit attempts
+        const exitLogs = data.data.filter(log => log.status === 'exited' || log.status === 'exit-denied');
+        const transformedLogs = exitLogs.map(log => ({
           id: log._id,
           timestamp: new Date(log.timestamp).toLocaleString(),
           user: log.userId?.name || log.userId?.email || 'Unknown User',
           rfid: log.userId?.rfidTag || log.rfidTag || 'Unknown',
-          status: 'exited', // Only successful exits should appear here
+          status: log.status, // 'exited' or 'exit-denied'
           location: log.location || log.deviceId?.location || 'Unknown Location'
         }))
-        console.log('✅ Found', transformedLogs.length, 'successful exit logs');
         setLogs(transformedLogs)
         setFilteredLogs(transformedLogs)
       } else {
@@ -239,7 +238,7 @@ const ExitLogs = ({ user }) => {
                   <td className="user">{log.user}</td>
                   <td className="rfid">{log.rfid}</td>
                   <td>
-                    <span className={`status-badge status-entered`}>
+                    <span className={`status-badge ${log.status === 'exit-denied' ? 'status-exit-denied' : 'status-entered'}`}>
                       {(log.status || 'exited').toUpperCase()}
                     </span>
                   </td>

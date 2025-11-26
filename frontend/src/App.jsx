@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Dashboard from './views/pages/Dashboard';
-import AccessLogs from './views/pages/AccessLogs';
 import EnhancedStudentManagement from './views/pages/EnhancedStudentManagement';
 import Settings from './views/pages/Settings';
 import RealTimeRFID from './views/components/RealTimeRFID';
@@ -10,7 +9,8 @@ import Header from './views/components/Header';
 import DashboardPresenter from './presenters/DashboardPresenter';
 import LoginPage from './views/pages/LoginPage';
 import UserManagement from './views/pages/UserManagement';
-import ExitLogs from './views/pages/ExitLogs';
+import Logs from './views/components/Logs';
+import GateControl from './views/components/GateControl';
 import './App.css';
 
 function App() {
@@ -125,14 +125,17 @@ function AppWithLocation({ gateStatus, systemStatus, user, onLogout, dashboardPr
   // Helper to determine current page for Header component
   const getCurrentPage = (pathname) => {
     if (pathname === '/dashboard') return 'dashboard';
-    if (pathname === '/access-logs') return 'access-logs';
-    if (pathname === '/exit-logs') return 'exit-logs';
+    if (pathname === '/logs') return 'logs';
     if (pathname === '/student-management') return 'student-management';
     if (pathname === '/settings') return 'settings';
     if (pathname === '/realtime-rfid') return 'realtime-rfid';
     if (pathname === '/user-management') return 'user-management';
     return 'dashboard';
   };
+
+  // Role checks
+  const isSecurityGuard = user && user.role === 'admin';
+  const isSuperAdmin = user && user.role === 'superadmin';
 
   // Render main app layout with Sidebar, Header, and Routes
   return (
@@ -148,16 +151,16 @@ function AppWithLocation({ gateStatus, systemStatus, user, onLogout, dashboardPr
         />
         <div className="page-content">
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-            <Route path="/dashboard" element={dashboardPresenter ? <Dashboard gateStatus={gateStatus} presenter={dashboardPresenter} user={user} /> : null} />
-            <Route path="/access-logs" element={<AccessLogs user={user} />} />
-            <Route path="/student-management" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <EnhancedStudentManagement user={user} /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage students.</div>} />
-            <Route path="/realtime-rfid" element={<RealTimeRFID />} />
-            <Route path="/settings" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <Settings /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can access system settings.</div>} />
-            <Route path="/user-management" element={user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? <UserManagement user={user} /> : <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 'bold' }}>Access Denied: Only super admins can manage users.</div>} />
-            <Route path="/exit-logs" element={<ExitLogs user={user} />} />
+            <Route path="/" element={<Navigate to={isSecurityGuard ? "/realtime-rfid" : "/dashboard"} />} />
+            <Route path="/dashboard" element={isSuperAdmin ? (dashboardPresenter ? <Dashboard gateStatus={gateStatus} presenter={dashboardPresenter} user={user} /> : null) : <Navigate to="/realtime-rfid" />} />
+            <Route path="/logs" element={isSuperAdmin ? <Logs user={user} /> : <Navigate to="/realtime-rfid" />} />
+            <Route path="/student-management" element={isSuperAdmin ? <EnhancedStudentManagement user={user} /> : <Navigate to="/realtime-rfid" />} />
+            <Route path="/realtime-rfid" element={isSecurityGuard ? <RealTimeRFID /> : <Navigate to="/dashboard" />} />
+            <Route path="/settings" element={isSuperAdmin ? <Settings /> : <Navigate to="/realtime-rfid" />} />
+            <Route path="/user-management" element={isSuperAdmin ? <UserManagement user={user} /> : <Navigate to="/realtime-rfid" />} />
+            <Route path="/gate-control" element={isSecurityGuard ? <GateControl /> : <Navigate to="/dashboard" />} />
             {/* Add more routes as needed */}
-            <Route path="*" element={<Navigate to="/dashboard" />} />
+            <Route path="*" element={<Navigate to={isSecurityGuard ? "/realtime-rfid" : "/dashboard"} />} />
           </Routes>
         </div>
       </div>

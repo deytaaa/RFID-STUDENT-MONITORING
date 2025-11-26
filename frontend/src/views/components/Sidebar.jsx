@@ -6,7 +6,9 @@ import {
   Shield,
   Activity,
   GraduationCap,
-  Radio
+  Radio,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react'
 import './Sidebar.css'
 import logo from '../../assets/logo-ptc.png';
@@ -16,6 +18,7 @@ import { Link, useLocation } from 'react-router-dom';
 const Sidebar = ({ user }) => {
   const location = useLocation();
   const [backendOnline, setBackendOnline] = useState(true);
+  const [logsOpen, setLogsOpen] = useState(true);
 
   useEffect(() => {
     const checkBackend = async () => {
@@ -31,49 +34,52 @@ const Sidebar = ({ user }) => {
     return () => clearInterval(interval);
   }, []);
 
-  const menuItems = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: Home
-    },
-    {
-      id: 'realtime-rfid',
-      label: 'Real-Time RFID',
-      icon: Radio
-    },
-    {
-      id: 'access-logs',
-      label: 'Entry Logs',
-      icon: FileText
-    },
-    {
-      id: 'exit-logs',
-      label: 'Exit Logs',
-      icon: FileText
-    },
-    // Only show student management for superadmin
-    ...(user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? [
-      {
-        id: 'student-management',
-        label: 'Students',
-        icon: GraduationCap
-      },
-      {
-        id: 'user-management',
-        label: 'User Management',
-        icon: Users
-      }
-    ] : []),
-    // Only show settings for superadmin
-    ...(user && (user.role === 'superadmin' || user.accessLevel === 'superadmin') ? [
-      {
-        id: 'settings',
-        label: 'Settings',
-        icon: Settings
-      }
-    ] : [])
-  ]
+  // Only show Real-Time RFID tab for admin (security guard)
+  const isSecurityGuard = user && user.role === 'admin';
+  const isSuperAdmin = user && user.role === 'superadmin';
+  const menuItems = isSecurityGuard
+    ? [
+        {
+          id: 'realtime-rfid',
+          label: 'Real-Time RFID',
+          icon: Radio
+        },
+        {
+          id: 'gate-control',
+          label: 'Gate Control',
+          icon: Shield
+        }
+      ]
+    : [
+        {
+          id: 'dashboard',
+          label: 'Dashboard',
+          icon: Home
+        },
+        {
+          id: 'logs',
+          label: 'Logs',
+          icon: FileText
+        },
+        // Only show student/user management and settings for superadmin
+        ...(isSuperAdmin ? [
+          {
+            id: 'student-management',
+            label: 'Students',
+            icon: GraduationCap
+          },
+          {
+            id: 'user-management',
+            label: 'User Management',
+            icon: Users
+          },
+          {
+            id: 'settings',
+            label: 'Settings',
+            icon: Settings
+          }
+        ] : [])
+      ]
 
   return (
     <div className="sidebar">
@@ -85,6 +91,40 @@ const Sidebar = ({ user }) => {
       </div>
       <nav className="sidebar-nav">
         {menuItems.map((item) => {
+          if (item.group && item.children) {
+            const isOpen = logsOpen;
+            return (
+              <div key={item.id} className="nav-group">
+                <div
+                  className={`nav-item nav-group-header${isOpen ? ' open' : ''}`}
+                  onClick={() => setLogsOpen(!logsOpen)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <item.icon size={20} />
+                  <span>{item.label}</span>
+                  {isOpen ? <ChevronDown size={16} style={{ marginLeft: 'auto' }} /> : <ChevronRight size={16} style={{ marginLeft: 'auto' }} />}
+                </div>
+                {isOpen && (
+                  <div className="nav-group-children">
+                    {item.children.map((child) => {
+                      const ChildIcon = child.icon;
+                      return (
+                        <Link
+                          key={child.id}
+                          to={`/${child.id}`}
+                          className={`nav-item nav-sub-item${location.pathname === `/${child.id}` ? ' active' : ''}`}
+                          style={{ textDecoration: 'none' }}
+                        >
+                          <ChildIcon size={18} />
+                          <span>{child.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
           const Icon = item.icon;
           return (
             <Link
