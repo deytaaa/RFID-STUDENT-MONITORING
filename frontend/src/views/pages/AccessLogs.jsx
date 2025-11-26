@@ -6,7 +6,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import './AccessLogs.css'
 
-const AccessLogs = ({ user }) => {
+const AccessLogs = ({ user, setExportPDFHandler }) => {
   const [logs, setLogs] = useState([])
   const [filteredLogs, setFilteredLogs] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -200,6 +200,15 @@ const AccessLogs = ({ user }) => {
     doc.save(`entry_logs_${new Date().toISOString().slice(0,10)}.pdf`);
   }
 
+  // Register the export handler with the parent component
+  React.useEffect(() => {
+    if (setExportPDFHandler) {
+      setExportPDFHandler(() => handleExportPDF);
+    }
+    // Clean up handler on unmount
+    return () => setExportPDFHandler && setExportPDFHandler(null);
+  }, [setExportPDFHandler, filteredLogs]);
+
   // Pagination
   const indexOfLastLog = currentPage * logsPerPage
   const indexOfFirstLog = indexOfLastLog - logsPerPage
@@ -238,15 +247,9 @@ const AccessLogs = ({ user }) => {
         </div>
       )}
       
-      <div className="logs-header">
+      <div className="logs-header" style={{ display: 'none' }}>
         <div className="logs-title">
         </div>
-        {(user && (user.role === 'superadmin' || user.accessLevel === 'superadmin')) && (
-          <button className="btn btn-primary" onClick={handleExportPDF}>
-            <Download size={16} />
-            Export PDF
-          </button>
-        )}
       </div>
 
       <div className="logs-filters">

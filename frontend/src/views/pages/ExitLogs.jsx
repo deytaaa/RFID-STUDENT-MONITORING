@@ -6,7 +6,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import './AccessLogs.css'
 
-const ExitLogs = ({ user }) => {
+const ExitLogs = ({ user, setExportPDFHandler }) => {
   const [logs, setLogs] = useState([])
   const [filteredLogs, setFilteredLogs] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -163,7 +163,14 @@ const ExitLogs = ({ user }) => {
     doc.save(`exit_logs_${new Date().toISOString().slice(0,10)}.pdf`);
   }
 
-
+  // Register the export PDF handler with the parent Logs component
+  React.useEffect(() => {
+    if (setExportPDFHandler) {
+      setExportPDFHandler(() => handleExportPDF);
+    }
+    // Clean up handler on unmount
+    return () => setExportPDFHandler && setExportPDFHandler(null);
+  }, [setExportPDFHandler, filteredLogs]);
 
   // Optional: Auto-refresh every 60 seconds to stay in sync with database
   useEffect(() => {
@@ -200,13 +207,8 @@ const ExitLogs = ({ user }) => {
           </button>
         </div>
       )}
-      <div className="logs-header">
-        {(user && (user.role === 'superadmin' || user.accessLevel === 'superadmin')) && (
-          <button className="btn btn-primary" style={{ marginLeft: 'auto' }}  onClick={handleExportPDF}>
-            <Download size={16}/>
-            Export PDF 
-          </button>
-        )}
+      <div className="logs-header" style={{ display: 'none' }}>
+        {/* Hide internal header, now handled by Logs.jsx */}
       </div>
       <div className="logs-filters">
         <div className="search-filter">

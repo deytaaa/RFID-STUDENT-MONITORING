@@ -5,10 +5,17 @@
   padding: 24px;
 }
 
+.logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
 .logs-tabs-header {
   display: flex;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .logs-tab-btn {
