@@ -245,7 +245,7 @@ const ExitLogs = ({ user, setExportPDFHandler }) => {
                   <td className="user">{log.user}</td>
                   <td className="rfid">{log.rfid}</td>
                   <td>
-                    <span className={`status-badge ${log.status === 'exit-denied' ? 'status-exit-denied' : 'status-entered'}`}>
+                    <span className={`status-badge ${log.status === 'exit-denied' ? 'status-exit-denied' : log.status === 'exited' ? 'status-exited' : 'status-entered'}`}>
                       {(log.status || 'exited').toUpperCase()}
                     </span>
                   </td>
