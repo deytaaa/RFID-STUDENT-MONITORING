@@ -101,7 +101,6 @@ const AccessLogs = ({ user }) => {
           location: log.location || log.deviceId?.location || 'Unknown Location',
           direction: log.direction
         }))
-        
         // Only show entry logs (direction: 'entry') and exclude exit logs
         const accessLogs = transformedLogs.filter(log => 
           !log.direction || log.direction === 'entry'
@@ -168,11 +167,16 @@ const AccessLogs = ({ user }) => {
       filtered = filtered.filter(log => log.status === filterStatus)
     }
 
-    // Filter by date
+    // Filter by date (local time, matches dashboard/chart logic)
     if (filterDate) {
       filtered = filtered.filter(log => {
-        const logDate = new Date(log.timestamp).toISOString().slice(0,10)
-        return logDate === filterDate
+        const logDate = new Date(log.timestamp);
+        const filter = new Date(filterDate);
+        return (
+          logDate.getFullYear() === filter.getFullYear() &&
+          logDate.getMonth() === filter.getMonth() &&
+          logDate.getDate() === filter.getDate()
+        );
       })
     }
 

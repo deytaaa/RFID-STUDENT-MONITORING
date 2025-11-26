@@ -5,18 +5,19 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer 
+  ResponsiveContainer, 
+  Legend
 } from 'recharts'
 
 const AccessChart = ({ data = [] }) => {
   // Match the exact data from your UI design
   const defaultData = [
-    { day: 'Mon', granted: 0, denied: 0 },
-    { day: 'Tue', granted: 1, denied: 0 },
-    { day: 'Wed', granted: 2, denied: 1 },
-    { day: 'Thu', granted: 4, denied: 2 },
-    { day: 'Fri', granted: 8, denied: 1 },
-    { day: 'Sat', granted: 10, denied: 0 }
+    { day: 'Mon', granted: 0, denied: 0, exited: 0 },
+    { day: 'Tue', granted: 1, denied: 0, exited: 0 },
+    { day: 'Wed', granted: 2, denied: 1, exited: 0 },
+    { day: 'Thu', granted: 4, denied: 2, exited: 1 },
+    { day: 'Fri', granted: 8, denied: 1, exited: 2 },
+    { day: 'Sat', granted: 10, denied: 0, exited: 3 }
   ]
   
   const chartData = data.length > 0 ? data : defaultData
@@ -51,10 +52,11 @@ const AccessChart = ({ data = [] }) => {
               fontSize: '12px'
             }}
           />
+          <Legend />
           <Bar 
             dataKey="granted" 
             fill="#10b981" 
-            name="Granted"
+            name="Entered"
             barSize={30}
             radius={[6, 6, 0, 0]}
           />
@@ -62,6 +64,13 @@ const AccessChart = ({ data = [] }) => {
             dataKey="denied" 
             fill="#ef4444" 
             name="Denied"
+            barSize={30}
+            radius={[6, 6, 0, 0]}
+          />
+          <Bar 
+            dataKey="exited" 
+            fill="#3b82f6" 
+            name="Exited"
             barSize={30}
             radius={[6, 6, 0, 0]}
           />

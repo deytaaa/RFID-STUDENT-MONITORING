@@ -28,10 +28,14 @@ const Dashboard = ({ user }) => {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [gateStatus, setGateStatus] = useState('closed');
   const [systemMetrics, setSystemMetrics] = useState({ rfidReader: 'connected', database: 'connected', network: 'strong' });
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().slice(0, 10); // yyyy-mm-dd
+  });
+
+  // Calculate days in selected month/year for day dropdown
+  const daysInMonth = new Date(new Date(selectedDate).getFullYear(), new Date(selectedDate).getMonth() + 1, 0).getDate();
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
@@ -63,27 +67,34 @@ const Dashboard = ({ user }) => {
       const monthLogs = logs.success
         ? logs.data.filter((log) => {
             const logDate = new Date(log.timestamp);
-            return logDate.getFullYear() === selectedYear && logDate.getMonth() === selectedMonth;
+            return logDate.getFullYear() === new Date(selectedDate).getFullYear() && logDate.getMonth() === new Date(selectedDate).getMonth();
           })
         : [];
-      const todayLogs = monthLogs.filter((log) => {
-        const today = new Date();
-        return new Date(log.timestamp).toDateString() === today.toDateString();
+      // Filter logs for the selected day (local time, matches chart logic)
+      const selectedDay = new Date(selectedDate).getDate();
+      const selectedMonth = new Date(selectedDate).getMonth();
+      const selectedYear = new Date(selectedDate).getFullYear();
+      const selectedDayLogs = monthLogs.filter((log) => {
+        const logDate = new Date(log.timestamp);
+        return (
+          logDate.getFullYear() === selectedYear &&
+          logDate.getMonth() === selectedMonth &&
+          logDate.getDate() === selectedDay
+        );
       });
       setStats({
         totalAccess: monthLogs.filter((log) => log.accessGranted === true && log.direction !== "exit").length,
         totalDenied: monthLogs.filter((log) => log.accessGranted === false).length,
-        authorizedToday: todayLogs.filter((log) => log.accessGranted === true && log.direction !== "exit").length,
-        deniedToday: todayLogs.filter((log) => log.accessGranted === false).length,
+        authorizedToday: selectedDayLogs.filter((log) => log.accessGranted === true && log.direction !== "exit").length,
+        deniedToday: selectedDayLogs.filter((log) => log.accessGranted === false).length,
         totalExit: monthLogs.filter((log) => log.accessGranted === true && log.direction === "exit").length,
-        todayExit: todayLogs.filter((log) => log.accessGranted === true && log.direction === "exit").length,
+        todayExit: selectedDayLogs.filter((log) => log.accessGranted === true && log.direction === "exit").length,
         systemUptime: uptimeString,
       });
 
       // Prepare chart data for the selected month/year
-      const year = selectedYear;
-      const month = selectedMonth;
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const year = new Date(selectedDate).getFullYear();
+      const month = new Date(selectedDate).getMonth();
       const chartData = Array.from({ length: daysInMonth }, (_, i) => {
         const dayDate = new Date(year, month, i + 1);
         const dayLabel = `${dayDate.getDate()}`;
@@ -95,7 +106,7 @@ const Dashboard = ({ user }) => {
                 return logDate.getFullYear() === year &&
                   logDate.getMonth() === month &&
                   logDate.getDate() === dayDate.getDate() &&
-                  log.accessGranted === true;
+                  log.accessGranted === true && log.direction !== 'exit';
               }).length
             : 0,
           denied: logs.success
@@ -104,7 +115,16 @@ const Dashboard = ({ user }) => {
                 return logDate.getFullYear() === year &&
                   logDate.getMonth() === month &&
                   logDate.getDate() === dayDate.getDate() &&
-                  log.accessGranted === false;
+                  log.accessGranted === false && log.direction !== 'exit';
+              }).length
+            : 0,
+          exited: logs.success
+            ? logs.data.filter((log) => {
+                const logDate = new Date(log.timestamp);
+                return logDate.getFullYear() === year &&
+                  logDate.getMonth() === month &&
+                  logDate.getDate() === dayDate.getDate() &&
+                  log.accessGranted === true && log.direction === 'exit';
               }).length
             : 0,
         };
@@ -129,7 +149,7 @@ const Dashboard = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth, selectedYear]);
+  }, [selectedDate]);
 
   useEffect(() => {
     loadDashboardData();
@@ -222,59 +242,14 @@ const Dashboard = ({ user }) => {
         />
       </div>
 
-      <div className="dashboard-main-cards" style={{ display: 'flex', flexWrap: 'wrap', gap: '32px', justifyContent: 'center', alignItems: 'flex-start', marginBottom: '32px' }}>
-        {/* School Gate Control */}
-        <div className="card modern-card" style={{ flex: '1 1 340px', minWidth: '320px', maxWidth: '400px' }}>
-          <div className="card-header-modern">
-            <h3 className="card-title-modern">School Gate Control</h3>
-          </div>
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', padding: '24px 0' }}>
-            <button
-              className="btn btn-success"
-              disabled={gateStatus === 'opened'}
-              style={gateStatus === 'opened' ? { background: '#16a34a', color: '#fff', cursor: 'not-allowed' } : {}}
-              onClick={async () => {
-                try {
-                  const result = await ApiService.post('/system/gate', { action: 'open' });
-                  if (result.success) {
-                    setGateStatus('opened');
-                  } else {
-                    setGateStatus('error');
-                  }
-                } catch {
-                  setGateStatus('error');
-                }
-              }}
-            >{gateStatus === 'opened' ? 'Opened' : 'Open Gate'}</button>
-            <button
-              className="btn btn-danger"
-              disabled={gateStatus === 'closed'}
-              style={gateStatus === 'closed' ? { background: '#ef4444', color: '#fff', cursor: 'not-allowed' } : {}}
-              onClick={async () => {
-                try {
-                  const result = await ApiService.post('/system/gate', { action: 'close' });
-                  if (result.success) {
-                    setGateStatus('closed');
-                  } else {
-                    setGateStatus('error');
-                  }
-                } catch {
-                  setGateStatus('error');
-                }
-              }}
-            >{gateStatus === 'closed' ? 'Closed' : 'Close Gate'}</button>
-          </div>
-          <div style={{ textAlign: 'center', marginTop: '12px', fontWeight: 'bold', fontSize: '1.1rem' }}>
-            {gateStatus === 'error' && <span style={{ color: '#f59e0b' }}>Gate control failed</span>}
-          </div>
-        </div>
+      <div className="dashboard-main-cards" style={{ display: 'flex', flexWrap: 'wrap', gap: '32px', justifyContent: 'center', alignItems: 'start', marginBottom: '32px' }}>
         {/* System Status */}
-        <div className="card modern-card" style={{ flex: '1 1 340px', minWidth: '320px', maxWidth: '400px' }}>
-          <div className="card-header-modern">
-            <h3 className="card-title-modern">System Status</h3>
-            <div className="status-indicator status-online">
+        <div className="card modern-card" style={{ width: 600, minWidth: 320, maxWidth: 600 }}>
+          <div className="card-header-modern" style={{ flexDirection: 'column', alignItems: 'center' }}>
+            <h3 className="card-title-modern" style={{ marginBottom: 8 }}>System Status</h3>
+            <div className="status-indicator status-online" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eef4ff', borderRadius: 8, padding: '4px 16px', margin: 0 }}>
               <Wifi size={16} />
-              ONLINE
+              <span style={{ fontWeight: 600, color: '#22c55e', fontSize: '1.1rem' }}>ONLINE</span>
             </div>
           </div>
           <div className="system-metrics">
@@ -294,21 +269,17 @@ const Dashboard = ({ user }) => {
         </div>
         {/* Access Analytics - Centered */}
         {(user && (user.role === 'superadmin' || user.accessLevel === 'superadmin')) && (
-          <div className="card modern-card access-analytics-centered" style={{ width: 600, height: 480, margin: '0 auto' }}>
-            <div className="card-header-modern" style={{ textAlign: 'center' }}>
-              <h3 className="card-title-modern">Access Analytics</h3>
-              <p className="card-subtitle-modern">Selected Month: {selectedYear}-{String(selectedMonth+1).padStart(2,'0')}</p>
-              <div className="analytics-selector">
-                <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))}>
-                  {Array.from({ length: 12 }, (_, i) => (
-                    <option key={i} value={i}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
-                  ))}
-                </select>
-                <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
-                  {Array.from({ length: 5 }, (_, i) => (
-                    <option key={i} value={new Date().getFullYear() - i}>{new Date().getFullYear() - i}</option>
-                  ))}
-                </select>
+          <div className="card modern-card access-analytics-centered" style={{ width: 600, minWidth: 320, maxWidth: 600, margin: '0 auto' }}>
+            <div className="card-header-modern" style={{ flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <h3 className="card-title-modern" style={{ marginBottom: 8 }}>Access Analytics</h3>
+              <div className="card-subtitle-modern" style={{ marginBottom: 8 }}>
+                <span style={{ fontWeight: 500 }}>Selected Date:</span>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={e => setSelectedDate(e.target.value)}
+                  style={{ marginLeft: 8, padding: '6px 12px', borderRadius: 6, border: '1px solid #e5e7eb', fontSize: '1rem' }}
+                />
               </div>
             </div>
             <AccessChart data={chartData} />

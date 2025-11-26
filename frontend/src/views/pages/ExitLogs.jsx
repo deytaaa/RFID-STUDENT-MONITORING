@@ -125,11 +125,16 @@ const ExitLogs = ({ user }) => {
         log.rfid.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
-    // Filter by date
+    // Filter by date (local time, matches dashboard/chart logic)
     if (filterDate) {
       filtered = filtered.filter(log => {
-        const logDate = new Date(log.timestamp).toISOString().slice(0,10)
-        return logDate === filterDate
+        const logDate = new Date(log.timestamp);
+        const filter = new Date(filterDate);
+        return (
+          logDate.getFullYear() === filter.getFullYear() &&
+          logDate.getMonth() === filter.getMonth() &&
+          logDate.getDate() === filter.getDate()
+        );
       })
     }
     setFilteredLogs(filtered)
