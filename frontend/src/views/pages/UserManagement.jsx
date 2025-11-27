@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ApiService from '../../services/ApiService.js';
 import './UserManagement.css';
+import { Edit, Trash2 } from 'lucide-react';
 
 const Spinner = () => (
   <div className="um-spinner" aria-label="Loading" role="status">
@@ -71,6 +72,7 @@ const UserManagement = ({ user }) => {
         name: editAdmin.name,
         email: editAdmin.email,
         password: editAdmin.password || undefined,
+        isActive: editAdmin.isActive, // Ensure status is sent to backend
       });
       if (data.success) {
         setNotification({ type: 'success', message: 'Admin updated successfully.' });
@@ -205,6 +207,13 @@ const UserManagement = ({ user }) => {
                 <label>New Password:</label>
                 <input type="password" value={editAdmin.password || ''} onChange={e => setEditAdmin({ ...editAdmin, password: e.target.value })} placeholder="Leave blank to keep current password" />
               </div>
+              <div className="um-form-group">
+                <label>Status:</label>
+                <select value={editAdmin.isActive ? 'active' : 'inactive'} onChange={e => setEditAdmin({ ...editAdmin, isActive: e.target.value === 'active' })}>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
               <div className="um-modal-actions">
                 <button type="submit" className="um-btn um-btn-primary">Save</button>
                 <button type="button" className="um-btn" onClick={() => { setShowEditModal(false); setEditAdmin(null); }}>Cancel</button>
@@ -252,8 +261,12 @@ const UserManagement = ({ user }) => {
                   <td><span className={`um-role-badge ${u.accessLevel}`}>{u.accessLevel}</span></td>
                   <td><span className={`um-status-badge ${u.isActive ? 'active' : 'inactive'}`}>{u.isActive ? 'Active' : 'Inactive'}</span></td>
                   <td>
-                    <button className="um-btn um-btn-small" onClick={() => { setEditAdmin(u); setShowEditModal(true); }}>Edit</button>
-                    <button className="um-btn um-btn-small um-btn-danger" onClick={() => { setDeactivateAdmin(u); setShowDeactivateModal(true); }}>Deactivate</button>
+                    <button className="um-btn um-btn-small btn-icon" title="Edit" onClick={() => { setEditAdmin(u); setShowEditModal(true); }}>
+                      <Edit size={16} style={{ verticalAlign: 'middle' }} />
+                    </button>
+                    <button className="um-btn um-btn-small um-btn-danger btn-icon" title="Deactivate" onClick={() => { setDeactivateAdmin(u); setShowDeactivateModal(true); }}>
+                      <Trash2 size={16} style={{ verticalAlign: 'middle' }} />
+                    </button>
                   </td>
                 </tr>
               ))}

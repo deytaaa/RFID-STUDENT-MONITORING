@@ -162,6 +162,7 @@ const userController = {
       if (email) user.email = email;
       if (rfIdTag) user.rfIdTag = rfIdTag;
       if (accessLevel) user.accessLevel = accessLevel;
+      if (typeof req.body.isActive !== 'undefined') user.isActive = req.body.isActive;
 
       await user.save();
 

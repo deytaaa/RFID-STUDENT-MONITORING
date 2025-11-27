@@ -59,6 +59,9 @@ const authController = {
       if (user.accessLevel !== 'admin' && user.accessLevel !== 'superadmin') {
         return res.status(403).json({ message: 'Access denied. Only admins and super admins can log in to the system.' });
       }
+      if (!user.isActive) {
+        return res.status(403).json({ message: 'Account is inactive. Please contact the administrator.' });
+      }
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return res.status(400).json({ message: 'Invalid email or password.' });

@@ -1,7 +1,10 @@
-import { XCircle, Clock } from 'lucide-react'
+import { XCircle, Clock, Loader } from 'lucide-react'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+dayjs.extend(relativeTime)
 import './RecentActivity.css'
 
-const RecentActivity = ({ data }) => {
+const RecentActivity = ({ data, loading = false }) => {
   const getStatusClass = (status) => {
     switch (status) {
       case 'granted':
@@ -14,57 +17,52 @@ const RecentActivity = ({ data }) => {
     }
   }
 
+  // Show only the 5 most recent activities
+  const recentData = data.slice(0, 5)
+
   return (
     <div className="recent-activity">
-      {data.length === 0 ? (
+      {loading ? (
+        <div className="no-activity">
+          <Loader size={32} className="no-activity-icon loading-spin" />
+          <p>Loading recent activity...</p>
+        </div>
+      ) : recentData.length === 0 ? (
         <div className="no-activity">
           <Clock size={32} className="no-activity-icon" />
           <p>No recent activity</p>
         </div>
       ) : (
         <div className="activity-list">
-          {data.map((item) => {
+          {recentData.map((item) => {
+            console.log('RecentActivity item:', item); // DEBUG: See what status is received
             let statusText = ''
-            // Get display name from student object first, then fallback to item.user
             let displayName = (item.student && item.student.name && item.student.name !== 'Card not registered') 
                              ? item.student.name 
                              : (item.user || 'Unknown User')
             let statusColor = '#111'
-            
-            // Check if this is an inactive card (we get this info from the student object in RealTimeRFID)
-            const isInactiveCard = item.student && item.student.status === 'inactive'
-            console.log('RecentActivity item:', item, 'isInactiveCard:', isInactiveCard, 'displayName:', displayName)
-            
-            // Determine if this is an entrance or exit activity
-            // Check status first, then message, location, or any exit indicators
-            const isExit = item.status === 'exited' ||
-                          (item.message && (item.message.includes('Exit') || item.message.includes('exit'))) ||
-                          (item.location && item.location.toLowerCase().includes('exit')) ||
-                          (item.student && item.student.location && item.student.location.toLowerCase().includes('exit'));
+            const isInactiveCard = item.student && item.student.status === 'inactive';
+            const isExit = item.status === 'exited' || item.status === 'exit-denied' ||
+              (item.message && (item.message.includes('Exit') || item.message.includes('exit')))
             const activityType = isExit ? 'Exit' : 'Entrance';
-            
-            // Check for unknown user conditions
             const isUnknownUser = displayName === 'Unknown User' || 
                                  displayName === 'Unknown' || 
                                  displayName === 'Card not registered' ||
                                  !displayName ||
                                  (item.student && (item.student.status === 'unauthorized' || item.student.name === 'Card not registered'));
-            
-            if (isUnknownUser) {
+            if (isInactiveCard) {
+              statusText = `${activityType} - Account Inactive`;
+              statusColor = '#f59e0b';
+            } else if (isUnknownUser) {
               statusText = `${activityType} - Card Not Registered`
               displayName = 'Unknown User'
               statusColor = '#ef4444'
             } else if (item.status === 'granted' || item.status === 'exited') {
               statusText = `${activityType} - Access Granted`
               statusColor = '#10b981'
-            } else if (item.status === 'denied') {
-              if (isInactiveCard) {
-                statusText = `${activityType} - Account Inactive`
-                statusColor = '#f59e0b'
-              } else {
-                statusText = `${activityType} - Access Denied`
-                statusColor = '#ef4444'
-              }
+            } else if (item.status === 'denied' || item.status === 'exit-denied') {
+              statusText = `${activityType} - Access Denied`
+              statusColor = '#ef4444'
             } else {
               statusText = `${activityType} - Card Not Registered`
               displayName = 'Unknown User'
@@ -75,30 +73,27 @@ const RecentActivity = ({ data }) => {
                 <div className="activity-left" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <img
                     src={(() => {
-                      // Get profile picture from student object first, then fallback to item.profilePicture
-                      const profilePic = (item.student && item.student.profilePicture) 
-                                        ? item.student.profilePicture 
-                                        : item.profilePicture;
-                      
-                      if (!profilePic) {
-                        return 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                      let profilePic = (item.student && item.student.profilePicture)
+                        ? item.student.profilePicture
+                        : (item.profilePicture || 'https://cdn-icons-png.flaticon.com/512/149/149071.png');
+                      // If the profilePic is a relative path, prepend the backend URL
+                      if (profilePic && !profilePic.startsWith('http')) {
+                        profilePic = `http://localhost:3000${profilePic}`;
                       }
-                      
-                      if (profilePic.startsWith('/uploads/profile-pictures/')) {
-                        return `http://localhost:3000${profilePic}`;
-                      } else if (profilePic.startsWith('http')) {
-                        return profilePic;
-                      } else {
-                        return profilePic;
-                      }
+                      return profilePic;
                     })()}
                     alt="Profile"
-                    className="activity-profile"
-                    style={{ width: 48, height: 48, borderRadius: '50%', marginRight: 0, objectFit: 'cover', flexShrink: 0 }}
+                    className="activity-profile-pic"
+                    
+                    onError={e => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                    }}
                   />
-                  <div className="activity-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: 1 }}>
-                    <div className="student-name" style={{ fontWeight: 600, fontSize: '1.15rem', textAlign: 'left', marginBottom: 4 }}>{displayName}</div>
+                  <div>
+                    <div className="student-name" style={{ fontWeight: 600, textAlign: 'left', width: '100%', display: 'block' }}>{displayName}</div>
                     <div className="student-status" style={{ fontSize: '0.95rem', color: statusColor, fontWeight: 500, textAlign: 'left' }}>{statusText}</div>
+                    <div className="activity-timestamp" style={{ fontSize: '0.85rem', color: '#64748b' }}>{dayjs(item.timestamp).format('MM/DD/YYYY, h:mm:ss A')}</div>
                   </div>
                 </div>
                 <div className="activity-status-badge">

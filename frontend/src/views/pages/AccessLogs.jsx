@@ -6,7 +6,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import './AccessLogs.css'
 
-const AccessLogs = ({ user, setExportPDFHandler }) => {
+const AccessLogs = ({ setExportPDFHandler }) => {
   const [logs, setLogs] = useState([])
   const [filteredLogs, setFilteredLogs] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -184,7 +184,8 @@ const AccessLogs = ({ user, setExportPDFHandler }) => {
     setCurrentPage(1)
   }, [searchTerm, filterStatus, filterDate, logs])
 
-  const handleExportPDF = () => {
+  // Register the export handler with the parent component
+  const handleExportPDF = React.useCallback(() => {
     if (!filteredLogs.length) return;
     const doc = new jsPDF();
     doc.text('Entry Logs', 14, 16);
@@ -198,16 +199,15 @@ const AccessLogs = ({ user, setExportPDFHandler }) => {
     ]);
     autoTable(doc, { head: [tableColumn], body: tableRows, startY: 22 });
     doc.save(`entry_logs_${new Date().toISOString().slice(0,10)}.pdf`);
-  }
+  }, [filteredLogs]);
 
-  // Register the export handler with the parent component
   React.useEffect(() => {
     if (setExportPDFHandler) {
       setExportPDFHandler(() => handleExportPDF);
     }
     // Clean up handler on unmount
     return () => setExportPDFHandler && setExportPDFHandler(null);
-  }, [setExportPDFHandler, filteredLogs]);
+  }, [setExportPDFHandler, handleExportPDF]);
 
   // Pagination
   const indexOfLastLog = currentPage * logsPerPage

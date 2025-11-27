@@ -15,12 +15,6 @@ const Settings = () => {
     serverPort: 3000,
     mqttBroker: 'mqtt://localhost:1883',
     
-    // Security Settings
-    enableTwoFactor: false,
-    requireStrongPasswords: true,
-    sessionExpiry: 24,
-    auditLogging: true,
-    
     // Notification Settings
     emailNotifications: true,
     smsNotifications: false,
@@ -75,7 +69,6 @@ const Settings = () => {
   const tabs = [
     { id: 'system', label: 'System', icon: Shield },
     { id: 'network', label: 'Network', icon: Wifi },
-    { id: 'security', label: 'Security', icon: Shield },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'rfid', label: 'RFID', icon: Wifi },
     { id: 'database', label: 'Database', icon: Database }
@@ -184,79 +177,10 @@ const Settings = () => {
             </div>
           )}
 
-          {activeTab === 'security' && (
-            <div className="settings-section">
-              <h3>Security Settings</h3>
-              
-              <div className="setting-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={settings.enableTwoFactor}
-                    onChange={(e) => handleSettingChange('enableTwoFactor', e.target.checked)}
-                  />
-                  Enable Two-Factor Authentication
-                </label>
-              </div>
-
-              <div className="setting-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={settings.requireStrongPasswords}
-                    onChange={(e) => handleSettingChange('requireStrongPasswords', e.target.checked)}
-                  />
-                  Require Strong Passwords
-                </label>
-              </div>
-
-              <div className="setting-group">
-                <label>Session Expiry (hours)</label>
-                <input
-                  type="number"
-                  value={settings.sessionExpiry}
-                  onChange={(e) => handleSettingChange('sessionExpiry', parseInt(e.target.value))}
-                />
-              </div>
-
-              <div className="setting-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={settings.auditLogging}
-                    onChange={(e) => handleSettingChange('auditLogging', e.target.checked)}
-                  />
-                  Enable Audit Logging
-                </label>
-              </div>
-            </div>
-          )}
-
           {activeTab === 'notifications' && (
             <div className="settings-section">
               <h3>Notification Settings</h3>
-              
-              <div className="setting-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={settings.emailNotifications}
-                    onChange={(e) => handleSettingChange('emailNotifications', e.target.checked)}
-                  />
-                  Email Notifications
-                </label>
-              </div>
 
-              <div className="setting-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={settings.smsNotifications}
-                    onChange={(e) => handleSettingChange('smsNotifications', e.target.checked)}
-                  />
-                  SMS Notifications
-                </label>
-              </div>
 
               <div className="setting-group">
                 <label className="checkbox-label">
@@ -269,16 +193,19 @@ const Settings = () => {
                 </label>
               </div>
 
-              <div className="setting-group">
+                           <div className="setting-group">
                 <label className="checkbox-label">
                   <input
                     type="checkbox"
-                    checked={settings.notifyOnSystemStatus}
-                    onChange={(e) => handleSettingChange('notifyOnSystemStatus', e.target.checked)}
+                    checked={settings.notifyOnFailedAccess}
+                    onChange={(e) => handleSettingChange('notifyOnFailedAccess', e.target.checked)}
                   />
-                  Notify on System Status Changes
+                  Notify on Granted Access Attempts
                 </label>
               </div>
+
+              
+
             </div>
           )}
 
@@ -299,29 +226,6 @@ const Settings = () => {
                   <option value="/dev/ttyUSB0">/dev/ttyUSB0</option>
                   <option value="/dev/ttyUSB1">/dev/ttyUSB1</option>
                 </select>
-              </div>
-
-              <div className="setting-group">
-                <label>RFID Read Distance</label>
-                <select
-                  value={settings.rfidReadDistance}
-                  onChange={(e) => handleSettingChange('rfidReadDistance', e.target.value)}
-                >
-                  <option value="short">Short (1-2 cm)</option>
-                  <option value="medium">Medium (2-5 cm)</option>
-                  <option value="long">Long (5-10 cm)</option>
-                </select>
-              </div>
-
-              <div className="setting-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={settings.allowDuplicateCards}
-                    onChange={(e) => handleSettingChange('allowDuplicateCards', e.target.checked)}
-                  />
-                  Allow Duplicate RFID Cards
-                </label>
               </div>
 
               <div className="setting-group">

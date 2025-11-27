@@ -318,6 +318,9 @@ class ArduinoSerialService {
         });
       } else {
         console.log(`🚪 Exit scan: ${user.name} exited`);
+        // Send open command to Arduino for valid exit
+        this.sendCommand('OPEN_GATE:EXIT');
+        console.log('📤 Sent OPEN_GATE:EXIT to Arduino after valid exit scan');
         await this.createNotificationForAllAdmins({
           type: 'access_granted',
           title: 'Exit Recorded',

@@ -1,5 +1,6 @@
 const { AccessLog, User, Device } = require("../models");
 
+console.log('DEBUG: AccessLogController loaded');
 const accessLogController = {
   // GET /api/access-logs - Get all access logs (with pagination & filtering)
   async getAllAccessLogs(req, res) {
@@ -85,6 +86,7 @@ const accessLogController = {
   // POST /api/access-logs - Create new access log (RFID scan)
   async createAccessLog(req, res) {
     try {
+      console.log('DEBUG: createAccessLog called');
       const { rfidTag, deviceId, location, method = "rfid", userId, studentName, course, status, direction = "entry" } = req.body;
 
       // Validate required fields
@@ -121,6 +123,19 @@ const accessLogController = {
         accessGranted = true;
       }
 
+      // Auto-detect direction for known exit devices if not set
+      let fixedDirection = direction;
+      if (!direction && device) {
+        if (
+          device.serialNumber === 'TEST-001' ||
+          (device.location && device.location.toLowerCase().includes('exit'))
+        ) {
+          fixedDirection = 'exit';
+        } else {
+          fixedDirection = 'entry';
+        }
+      }
+
       // Create access log
       const newLog = new AccessLog({
         userId: user ? user._id : null,
@@ -130,7 +145,7 @@ const accessLogController = {
         location: location || device.location,
         method,
         reason: accessGranted ? undefined : reason,
-        direction,
+        direction: fixedDirection,
       });
 
       await newLog.save();
@@ -147,7 +162,7 @@ const accessLogController = {
           timestamp: newLog.timestamp,
           user: studentName || (user ? user.name : 'Unknown Student'),
           rfid: rfidTag,
-          status: status || (accessGranted ? (direction === 'exit' ? 'exited' : 'entered') : 'denied'),
+          status: status || (accessGranted ? (fixedDirection === 'exit' ? 'exited' : 'entered') : 'denied'),
           location: location || device.location || 'Unknown Location',
           course: course || (user ? user.course : 'Unknown Course')
         };
@@ -156,9 +171,17 @@ const accessLogController = {
         console.log('📡 Student tap event emitted:', tapEvent);
       }
 
+      // Send open command to Arduino for exit gate if access granted and direction is exit
+      const arduinoService = req.app.get('arduinoService');
+      console.log('DEBUG: arduinoService is', !!arduinoService, 'accessGranted:', accessGranted, 'fixedDirection:', fixedDirection);
+      if (accessGranted && fixedDirection === 'exit' && arduinoService) {
+        arduinoService.sendCommand('OPEN_GATE:EXIT');
+        console.log('📤 Sent OPEN_GATE:EXIT to Arduino');
+      }
+
       res.status(201).json({
         success: true,
-        message: `Access ${accessGranted ? (direction === 'exit' ? 'exited' : 'entered') : 'denied'}`,
+        message: `Access ${accessGranted ? (fixedDirection === 'exit' ? 'exited' : 'entered') : 'denied'}`,
         data: newLog,
         accessGranted, // Quick access for RFID reader
       });

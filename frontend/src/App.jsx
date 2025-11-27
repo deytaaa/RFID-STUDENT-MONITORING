@@ -125,7 +125,8 @@ function AppWithLocation({ gateStatus, systemStatus, user, onLogout, dashboardPr
   // Helper to determine current page for Header component
   const getCurrentPage = (pathname) => {
     if (pathname === '/dashboard') return 'dashboard';
-    if (pathname === '/logs') return 'logs';
+    if (pathname === '/logs') return 'access-logs'; // Entry Logs
+    if (pathname === '/exit-logs') return 'exit-logs'; // Exit Logs
     if (pathname === '/student-management') return 'student-management';
     if (pathname === '/settings') return 'settings';
     if (pathname === '/realtime-rfid') return 'realtime-rfid';
@@ -154,6 +155,7 @@ function AppWithLocation({ gateStatus, systemStatus, user, onLogout, dashboardPr
             <Route path="/" element={<Navigate to={isSecurityGuard ? "/realtime-rfid" : "/dashboard"} />} />
             <Route path="/dashboard" element={isSuperAdmin ? (dashboardPresenter ? <Dashboard gateStatus={gateStatus} presenter={dashboardPresenter} user={user} /> : null) : <Navigate to="/realtime-rfid" />} />
             <Route path="/logs" element={isSuperAdmin ? <Logs user={user} /> : <Navigate to="/realtime-rfid" />} />
+            <Route path="/exit-logs" element={isSuperAdmin ? <Logs user={user} type="exit" /> : <Navigate to="/realtime-rfid" />} />
             <Route path="/student-management" element={isSuperAdmin ? <EnhancedStudentManagement user={user} /> : <Navigate to="/realtime-rfid" />} />
             <Route path="/realtime-rfid" element={isSecurityGuard ? <RealTimeRFID /> : <Navigate to="/dashboard" />} />
             <Route path="/settings" element={isSuperAdmin ? <Settings /> : <Navigate to="/realtime-rfid" />} />

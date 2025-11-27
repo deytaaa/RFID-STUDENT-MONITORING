@@ -245,8 +245,8 @@ const Header = ({ gateStatus, systemStatus, currentPage, user, onLogout }) => {
   const getPageTitle = (page) => {
     const titles = {
       dashboard: "School Dashboard",
-      "access-logs": "Entry Logs",
-      "exit-logs": "Exit Logs",
+      "access-logs": "Logs",
+      "exit-logs": "Logs",
       "user-management": "Admin Management",
       "student-management": "Student Management",
       settings: "System Settings",
@@ -350,26 +350,7 @@ const Header = ({ gateStatus, systemStatus, currentPage, user, onLogout }) => {
 
       <div className="header-right">
         <div className="status-badges">
-          <div className="status-badge">
-            <span className="status-label">Gate:</span>
-            <span
-              className="status-value"
-              style={{ color: getStatusColor(gateStatus) }}
-            >
-              {gateStatus.toUpperCase()}
-            </span>
-          </div>
-          <div className="status-badge">
-            <span className="status-label">System:</span>
-            <span
-              className="status-value"
-              style={{
-                color: getStatusColor(backendOnline ? systemStatus : "offline"),
-              }}
-            >
-              {backendOnline ? systemStatus.toUpperCase() : "OFFLINE"}
-            </span>
-          </div>
+          {/* Gate status removed as per user request */}
         </div>
 
         <div className="header-actions">

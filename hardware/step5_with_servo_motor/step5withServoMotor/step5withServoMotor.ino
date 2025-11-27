@@ -14,10 +14,12 @@
 #define RED_LED_PIN      8
 #define BUZZER_PIN       5
 #define SERVO_PIN        6
+#define SERVO_EXIT_PIN   2 // New: Exit gate servo pin
 
 MFRC522 mfrc522_entry(SS_PIN_ENTRY, RST_PIN_ENTRY);
 MFRC522 mfrc522_exit(SS_PIN_EXIT, RST_PIN_EXIT);
 Servo gateServo;
+Servo exitGateServo; // New: Exit gate servo object
 
 // ----------------------------
 // Timing Variables
@@ -58,7 +60,9 @@ void setup() {
   mfrc522_exit.PCD_Init();
 
   gateServo.attach(SERVO_PIN);
+  exitGateServo.attach(SERVO_EXIT_PIN); // New: Attach exit servo
   gateServo.write(0); // gate closed
+  exitGateServo.write(0); // exit gate closed
 
   pinMode(GREEN_LED_PIN, OUTPUT);
   pinMode(RED_LED_PIN, OUTPUT);
@@ -155,7 +159,7 @@ void loop() {
   // --- EXIT sequence non-blocking ---
   if (exitActive) {
     if (currentMillis - exitStartTime >= exitGateOpenDuration) {
-      // Simulate closing exit gate (add your motor code here if needed)
+      exitGateServo.write(0); // Close exit gate
       exitActive = false;
       Serial.println("[EXIT] Exit gate closed, ready for next scan");
       sendBackendData("EXIT_GATE_CLOSED", lastCardID_exit, "Exit gate closed after exit", EXIT_DEVICE_SERIAL);
@@ -214,9 +218,9 @@ void checkSerialCommands() {
       Serial.println("[REMOTE] Entry Gate CLOSED by backend");
       sendBackendData("GATE_CLOSED", "", "Entry gate closed by backend command", ENTRY_DEVICE_SERIAL);
     } else if (command == "OPEN_GATE:EXIT") {
-      // Simulate exit gate open (no servo, just state)
       exitActive = true;
       exitStartTime = millis();
+      exitGateServo.write(90); // Open exit gate
       digitalWrite(GREEN_LED_PIN, HIGH);
       digitalWrite(RED_LED_PIN, LOW);
       tone(BUZZER_PIN, 1000, 200);
@@ -224,6 +228,7 @@ void checkSerialCommands() {
       sendBackendData("EXIT_GATE_OPEN", lastCardID_exit, "Exit gate opened by backend command", EXIT_DEVICE_SERIAL);
     } else if (command == "CLOSE_GATE:EXIT") {
       exitActive = false;
+      exitGateServo.write(0); // Close exit gate
       digitalWrite(GREEN_LED_PIN, LOW);
       digitalWrite(RED_LED_PIN, HIGH);
       Serial.println("[REMOTE] Exit Gate CLOSED by backend");

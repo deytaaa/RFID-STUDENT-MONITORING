@@ -315,10 +315,18 @@ const RealTimeRFID = () => {
           // Determine if this is an exit activity based on the log message or location
           const isExitActivity = log.message && log.message.toLowerCase().includes('exit');
           
+          // Use backend status if available, otherwise determine from accessGranted and direction
+          let computedStatus = log.status || (log.accessGranted ? 'granted' : 'denied');
+          // If the log.direction is 'exit' and not granted, set status to 'exit-denied'
+          if (!log.accessGranted && log.direction === 'exit') {
+            computedStatus = 'exit-denied';
+          } else if (log.accessGranted && log.direction === 'exit') {
+            computedStatus = 'exited';
+          }
           return {
             id: log._id || `${Date.now()}-${Math.random()}`,
             cardID: cardID,
-            status: log.accessGranted ? (isExitActivity ? 'exited' : 'granted') : 'denied',
+            status: computedStatus,
             timestamp: log.timestamp,
             message: message,
             location: log.location,
