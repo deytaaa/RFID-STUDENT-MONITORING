@@ -84,22 +84,21 @@ const ExitLogs = ({ user, setExportPDFHandler }) => {
       return;
     }
     try {
-      const data = await ApiService.get('/access-logs/exit')
-      console.log('📊 Exit logs API response:', data);
-      
+      // Fetch all logs, not just /exit
+      const data = await ApiService.get('/access-logs');
+      console.log('📊 All logs API response:', data);
       if (data.success && data.data && data.data.length > 0) {
-        // Show both successful and denied exit attempts
-        const exitLogs = data.data.filter(log => log.status === 'exited' || log.status === 'exit-denied');
-        const transformedLogs = exitLogs.map(log => ({
+        // Filter for exit logs (direction: 'exit')
+        const exitLogs = data.data.filter(log => log.direction === 'exit').map(log => ({
           id: log._id,
-          timestamp: new Date(log.timestamp).toLocaleString(),
+          timestamp: log.timestamp, // keep as ISO string
           user: log.userId?.name || log.userId?.email || 'Unknown User',
           rfid: log.userId?.rfidTag || log.rfidTag || 'Unknown',
           status: log.status, // 'exited' or 'exit-denied'
           location: log.location || log.deviceId?.location || 'Unknown Location'
-        }))
-        setLogs(transformedLogs)
-        setFilteredLogs(transformedLogs)
+        }));
+        setLogs(exitLogs)
+        setFilteredLogs(exitLogs)
       } else {
         // No data found - clear everything
         console.log('📭 No exit logs found in database - clearing UI');
@@ -130,12 +129,11 @@ const ExitLogs = ({ user, setExportPDFHandler }) => {
       filtered = filtered.filter(log => {
         const logDate = new Date(log.timestamp);
         const filter = new Date(filterDate);
-        return (
-          logDate.getFullYear() === filter.getFullYear() &&
-          logDate.getMonth() === filter.getMonth() &&
-          logDate.getDate() === filter.getDate()
-        );
-      })
+        // Normalize both to local midnight for accurate comparison
+        logDate.setHours(0,0,0,0);
+        filter.setHours(0,0,0,0);
+        return logDate.getTime() === filter.getTime();
+      });
     }
     setFilteredLogs(filtered)
     setCurrentPage(1)
@@ -241,12 +239,12 @@ const ExitLogs = ({ user, setExportPDFHandler }) => {
             {currentLogs.length > 0 ? (
               currentLogs.map((log) => (
                 <tr key={log.id}>
-                  <td className="timestamp">{log.timestamp}</td>
+                  <td className="timestamp">{new Date(log.timestamp).toLocaleString()}</td>
                   <td className="user">{log.user}</td>
                   <td className="rfid">{log.rfid}</td>
                   <td>
                     <span className={`status-badge ${log.status === 'exit-denied' ? 'status-exit-denied' : log.status === 'exited' ? 'status-exited' : 'status-entered'}`}>
-                      {(log.status || 'exited').toUpperCase()}
+                      {log.status === 'exit-denied' ? 'EXIT DENIED' : log.status === 'exited' ? 'EXITED' : (log.status || 'UNKNOWN').toUpperCase()}
                     </span>
                   </td>
                   <td className="location">{log.location}</td>

@@ -252,6 +252,8 @@ const Header = ({ gateStatus, systemStatus, currentPage, user, onLogout }) => {
       settings: "System Settings",
       "device-management": "Device Management",
       "realtime-rfid": "Real Time Monitoring",
+      "gate-monitoring": "Gate Monitoring",
+      "gate-control": "Gate Control" // <-- Add this line
     };
     return titles[page] || "School Dashboard";
   };

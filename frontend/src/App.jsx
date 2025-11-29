@@ -131,6 +131,7 @@ function AppWithLocation({ gateStatus, systemStatus, user, onLogout, dashboardPr
     if (pathname === '/settings') return 'settings';
     if (pathname === '/realtime-rfid') return 'realtime-rfid';
     if (pathname === '/user-management') return 'user-management';
+    if (pathname === '/gate-control') return 'gate-control';
     return 'dashboard';
   };
 
