@@ -255,10 +255,10 @@ const EnhancedStudentManagement = ({ user }) => {
   // Bulk Operations
   const handleBulkDelete = async () => {
     if (!window.confirm(`Are you sure you want to deactivate ${selectedStudents.length} students?`)) return
-    
     setActionLoading(true)
     try {
-      const response = await ApiService.delete('/students/bulk', { studentIds: selectedStudents })
+      // Use POST for bulk deactivation
+      const response = await ApiService.post('/students/bulk-deactivate', { studentIds: selectedStudents })
       if (response.success) {
         showNotification(`Successfully deactivated ${response.data.modifiedCount} students`)
         setSelectedStudents([])

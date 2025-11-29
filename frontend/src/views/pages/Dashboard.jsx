@@ -242,9 +242,9 @@ const Dashboard = ({ user }) => {
         />
       </div>
 
-      <div className="dashboard-main-cards" style={{ display: 'flex', flexWrap: 'wrap', gap: '32px', justifyContent: 'center', alignItems: 'start', marginBottom: '32px' }}>
+      <div className="dashboard-main-cards dashboard-row-flex" style={{ display: 'flex', flexWrap: 'wrap', gap: '32px', justifyContent: 'center', alignItems: 'stretch', marginBottom: '32px' }}>
         {/* System Status */}
-        <div className="card modern-card" style={{ width: 600, minWidth: 320, maxWidth: 600 }}>
+        <div className="card modern-card" style={{ width: 600, minWidth: 320, maxWidth: 600,  flex: 1, height: 450, }}>
           <div className="card-header-modern" style={{ flexDirection: 'column', alignItems: 'center' }}>
             <h3 className="card-title-modern" style={{ marginBottom: 8 }}>System Status</h3>
             <div className="status-indicator status-online" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eef4ff', borderRadius: 8, padding: '4px 16px', margin: 0 }}>
@@ -269,7 +269,7 @@ const Dashboard = ({ user }) => {
         </div>
         {/* Access Analytics - Centered */}
         {(user && (user.role === 'superadmin' || user.accessLevel === 'superadmin')) && (
-          <div className="card modern-card access-analytics-centered" style={{ width: 600, minWidth: 320, maxWidth: 600, margin: '0 auto' }}>
+          <div className="card modern-card access-analytics-centered" style={{ width: 800, minWidth: 320, maxWidth: 800, flex: 1, height: 450  }}>
             <div className="card-header-modern" style={{ flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
               <h3 className="card-title-modern" style={{ marginBottom: 8 }}>Access Analytics</h3>
               <div className="card-subtitle-modern" style={{ marginBottom: 8 }}>

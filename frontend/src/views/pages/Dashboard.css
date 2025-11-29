@@ -322,4 +322,21 @@
   border-color: #2563eb;
 }
 
+.dashboard-main-cards.dashboard-row-flex {
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+  justify-content: center;
+  align-items: stretch;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 1300px) {
+  .dashboard-main-cards.dashboard-row-flex {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
 /* Add more as needed for your components */

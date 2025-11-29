@@ -21,6 +21,9 @@ router.put("/bulk", authenticateJWT, requireSuperAdmin, studentController.bulkUp
 // DELETE /api/students/bulk - Bulk delete/deactivate students
 router.delete("/bulk", authenticateJWT, requireSuperAdmin, studentController.bulkDeleteStudents);
 
+// POST /api/students/bulk-deactivate - Bulk deactivate students (soft delete)
+router.post("/bulk-deactivate", authenticateJWT, requireSuperAdmin, studentController.bulkDeleteStudents);
+
 // GET /api/students/rfid/:tag - Get student by RFID tag
 router.get("/rfid/:tag", studentController.getStudentByRfid); // RFID tap, no auth
 

@@ -202,14 +202,12 @@
 
 /* Table */
 .table-container {
-  width: 100%;
   overflow-x: auto;
-  padding-bottom: 8px;
+  width: 100%;
 }
 
 .students-table {
   width: 100%;
-  min-width: 700px;
   border-collapse: collapse;
 }
 
