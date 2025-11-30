@@ -192,6 +192,12 @@ const studentController = {
         });
       }
 
+      // Auto-generate a random password for students if not provided
+      let password = req.body.password;
+      if (!password) {
+        password = Math.random().toString(36).slice(-10); // 10-char random password
+      }
+
       // Create new student
       const newStudent = new User({
         name,
@@ -202,6 +208,7 @@ const studentController = {
         rfIdTag,
         accessLevel,
         isActive,
+        password // Always set a password
       });
 
       await newStudent.save();
