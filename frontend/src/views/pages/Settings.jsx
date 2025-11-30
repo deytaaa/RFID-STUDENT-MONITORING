@@ -7,7 +7,7 @@ const Settings = () => {
   const [settings, setSettings] = useState({
     // System Settings
     systemName: 'RFID Gate System',
-    autoLockDelay: 5,
+    autoLockDelay: 3,
     maxAccessAttempts: 3,
     
     // Network Settings
