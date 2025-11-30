@@ -390,6 +390,16 @@
   color: #b91c1c;
 }
 
+.access-result.exited {
+  background: #2563eb;
+  color: #fff;
+}
+
+.access-result.entered {
+  background: #059669;
+  color: #fff;
+}
+
 /* Student Scan Info */
 .student-scan-info {
   display: flex;

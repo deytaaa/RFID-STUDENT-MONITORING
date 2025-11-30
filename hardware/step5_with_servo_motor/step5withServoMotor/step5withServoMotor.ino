@@ -223,7 +223,7 @@ void checkSerialCommands() {
       exitGateServo.write(90); // Open exit gate
       digitalWrite(GREEN_LED_PIN, HIGH);
       digitalWrite(RED_LED_PIN, LOW);
-      tone(BUZZER_PIN, 1000, 200);
+      tone(BUZZER_PIN, 1000, 200); // Single short beep for success
       Serial.println("[REMOTE] Exit Gate OPENED by backend");
       sendBackendData("EXIT_GATE_OPEN", lastCardID_exit, "Exit gate opened by backend command", EXIT_DEVICE_SERIAL);
     } else if (command == "CLOSE_GATE:EXIT") {
@@ -264,6 +264,21 @@ void checkSerialCommands() {
       digitalWrite(BUZZER_PIN, LOW);
       Serial.println("[REMOTE] ACCESS DENIED by backend");
       sendBackendData("ACCESS_DENIED", cardID, "Access denied by backend", ENTRY_DEVICE_SERIAL);
+    } else if (command.startsWith("ACCESS_DENIED:EXIT")) {
+      // Denied pattern for exit: triple short beeps
+      digitalWrite(GREEN_LED_PIN, LOW);
+      digitalWrite(RED_LED_PIN, HIGH);
+      for (int i = 0; i < 3; i++) {
+        tone(BUZZER_PIN, 400, 150);
+        delay(200);
+      }
+      digitalWrite(BUZZER_PIN, LOW);
+      Serial.println("[REMOTE] EXIT ACCESS DENIED by backend");
+      // Optionally parse cardID if needed
+      int firstColon = command.indexOf(':');
+      int secondColon = command.indexOf(':', firstColon + 1);
+      String cardID = (secondColon > 0) ? command.substring(secondColon + 1) : "";
+      sendBackendData("EXIT_ACCESS_DENIED", cardID, "Exit access denied by backend", EXIT_DEVICE_SERIAL);
     }
   }
 }

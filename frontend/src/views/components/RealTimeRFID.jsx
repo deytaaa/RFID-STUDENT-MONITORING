@@ -184,6 +184,44 @@ const RealTimeRFID = () => {
 
     }
 
+    // Handle ENTRY_SCANNED event
+    const handleEntryScan = async (data) => {
+      console.log('🚪 Entry Scan:', JSON.stringify(data));
+      setRfidStatus(prev => ({
+        ...prev,
+        lastAccess: {
+          cardID: data.cardID,
+          status: 'entered',
+          timestamp: new Date(data.receivedAt || data.timestamp || new Date()),
+          provisional: false
+        },
+        gateStatus: 'open'
+      }));
+      const student = await fetchStudentByCardID(data.cardID);
+      setAccessStudent(student);
+    };
+
+    // Handle EXIT_SCANNED event
+    const handleExitScan = async (data) => {
+      console.log('🚪 Exit Scan:', JSON.stringify(data));
+      const student = await fetchStudentByCardID(data.cardID);
+      let status = 'exited';
+      if (student?.status === 'inactive' || student?.status === 'unauthorized' || student?.name === 'Card not registered') {
+        status = 'denied';
+      }
+      setRfidStatus(prev => ({
+        ...prev,
+        lastAccess: {
+          cardID: data.cardID,
+          status,
+          timestamp: new Date(data.receivedAt || data.timestamp || new Date()),
+          provisional: false
+        },
+        gateStatus: status === 'exited' ? 'open' : 'closed'
+      }));
+      setAccessStudent(student);
+    };
+
     // Attach event listeners
     WebSocketService.on('system-status', handleSystemReady)
     WebSocketService.on('arduino-card-scanned', handleCardScanned)
@@ -194,6 +232,8 @@ const RealTimeRFID = () => {
     WebSocketService.on('arduino-log', handleArduinoLog)
     WebSocketService.on('connected', handleConnected)
     WebSocketService.on('disconnected', handleDisconnected)
+    WebSocketService.on('arduino-entry-scan', handleEntryScan)
+    WebSocketService.on('arduino-exit-scan', handleExitScan)
 
     // Cleanup on unmount
     return () => {
@@ -207,6 +247,8 @@ const RealTimeRFID = () => {
       WebSocketService.off('arduino-log', handleArduinoLog)
       WebSocketService.off('connected', handleConnected)
       WebSocketService.off('disconnected', handleDisconnected)
+      WebSocketService.off('arduino-entry-scan', handleEntryScan)
+      WebSocketService.off('arduino-exit-scan', handleExitScan)
     }
   }, [])
 
@@ -412,8 +454,9 @@ const RealTimeRFID = () => {
                   </div>
                   <div className={`access-result ${rfidStatus.lastAccess.status}`}>
                     {rfidStatus.lastAccess.status === 'entered' && <><BsCheckCircle /> Entered</>}
+                    {rfidStatus.lastAccess.status === 'exited' && <><BsCheckCircle /> Exited</>}
                     {rfidStatus.lastAccess.status === 'denied' && <><BsXCircle /> Denied</>}
-                    {rfidStatus.lastAccess.status === 'granted' && <><BsCheckCircle />     Granted</>}
+                    {rfidStatus.lastAccess.status === 'granted' && <><BsCheckCircle /> Granted</>}
                   </div>
                   <div className="timestamp">{formatTime(rfidStatus.lastAccess.timestamp)}</div>
                 </>
@@ -424,8 +467,10 @@ const RealTimeRFID = () => {
                       ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
                       : rfidStatus.lastAccess.status === 'denied'
                       ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                      : rfidStatus.lastAccess.status === 'exited'
+                      ? 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)'
                       : 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
-                    color: 'white',
+                    color: rfidStatus.lastAccess.status === 'exited' ? '#fff' : 'white',
                     padding: '12px 24px',
                     borderRadius: '12px',
                     fontSize: '1.1rem',
@@ -440,6 +485,7 @@ const RealTimeRFID = () => {
                     letterSpacing: '1px'
                   }}>
                     {rfidStatus.lastAccess.status === 'entered' && <><BsCheckCircle size={20} /> Entered</>}
+                    {rfidStatus.lastAccess.status === 'exited' && <><BsCheckCircle size={20} /> Exited</>}
                     {rfidStatus.lastAccess.status === 'denied' && <><BsXCircle size={20} /> Denied</>}
                     {rfidStatus.lastAccess.status === 'granted' && <><BsCheckCircle size={20} /> Access Granted</>}
                   </div>

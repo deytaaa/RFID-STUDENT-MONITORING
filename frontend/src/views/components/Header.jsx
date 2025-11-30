@@ -244,7 +244,7 @@ const Header = ({ gateStatus, systemStatus, currentPage, user, onLogout }) => {
 
   const getPageTitle = (page) => {
     const titles = {
-      dashboard: "School Dashboard",
+      dashboard: "PTC Dashboard",
       "access-logs": "Logs",
       "exit-logs": "Logs",
       "user-management": "Admin Management",
@@ -255,7 +255,7 @@ const Header = ({ gateStatus, systemStatus, currentPage, user, onLogout }) => {
       "gate-monitoring": "Gate Monitoring",
       "gate-control": "Gate Control" // <-- Add this line
     };
-    return titles[page] || "School Dashboard";
+    return titles[page] || "PTC Dashboard";
   };
 
   const getStatusColor = (status) => {
